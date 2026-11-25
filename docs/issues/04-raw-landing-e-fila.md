@@ -19,4 +19,4 @@ Guardar o payload bruto antes de normalizar e sincronizar em lotes (limite de te
 ## Estado (25/11/2026)
 Feito e testado: executor de job (S1), fila no Postgres com `SKIP LOCKED` testada com 8 rodadas paralelas (S2), isolamento do navegador nas tabelas e funções novas (S3), e sincronização real de Locais, Usuários e Convênios (S4: 1, 50 e 128 registros).
 
-Falta: publicar os dois agendamentos (`enfileirar-cadastros` às 05:00 e `processar-fila` a cada 15 min) e disparar uma vez em produção. Depende das credenciais do ProDoctor na Vercel.
+**Fechada em 25/11/2026.** Agendamentos ativos em produção; disparados uma vez pela CLI: jobs 16–18 concluídos (1 unidade, 50 usuários, 128 convênios), sem retentativa.
