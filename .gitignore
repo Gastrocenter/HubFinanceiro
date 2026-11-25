@@ -23,3 +23,6 @@ __pycache__/
 
 fontes/
 *.tsbuildinfo
+
+# Guia local de explicação do projeto (não é documentação do produto)
+MAPA_DO_PROJETO.md
