@@ -1,0 +1,25 @@
+# Segredo: nunca versionar
+.env
+
+# Dados brutos baixados da API (podem conter dados de pacientes)
+dados_brutos/
+
+# Python
+.vscode
+.claude
+# Node / Next.js
+node_modules/
+.next/
+.vercel/
+.env*.local
+coverage/
+
+# SO
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Transcrições de reuniões (não versionar)
+fontes/
