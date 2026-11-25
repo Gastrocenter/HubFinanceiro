@@ -12,7 +12,13 @@ Requisitos RN-06, RN-07, RN-11 e [ADR-0002](../adr/0002-acesso-so-pelo-servidor-
 - Log de auditoria append-only (quem, o quê, quando).
 
 ## Critérios de aceite
-- [ ] Usuário sem login é redirecionado; usuário sem perfil adequado recebe 403.
-- [ ] Teste prova que não dá UPDATE/DELETE no log de auditoria.
-- [ ] Cliente (navegador) não consegue ler nenhuma tabela diretamente.
-- [ ] Login e troca de perfil geram entradas no log.
+- [x] Regra de decisão (sem login → /login, sem perfil → negado, usuário desativado → negado) testada em `src/dominio/acesso.test.ts`.
+- [x] Rota protegida de verdade: `proxy` manda quem não tem sessão para /login (307); `exigirAcesso` aplica a regra por perfil em /painel e /admin/auditoria. Verificado localmente.
+- [x] Teste prova que não dá UPDATE/DELETE/TRUNCATE no log de auditoria (`supabase/tests/auditoria_append_only.sql`).
+- [x] Cliente (navegador) não consegue ler nem gravar nas tabelas (`src/integracao/isolamento-do-navegador.test.ts`, 401 / 42501).
+- [ ] Login e troca de perfil geram entradas no log. Código pronto (login, login_falhou, logout, perfil_concedido); falta testar o login em produção com a senha real.
+
+## Estado (25/11/2026)
+Feito: regras de permissão (S1) e de acesso (S2), migration `20261125170000_perfis_e_auditoria.sql` (tabelas `perfis_usuarios` e `auditoria`, RLS forçado, sem policy), auditoria append-only por trigger (S3), isolamento do navegador (S4), tela de login, sessão no servidor, guard de rotas e página de auditoria do admin. Primeiro admin (`yurigermano11@gmail.com`) com perfil `admin`, registrado na auditoria.
+
+Falta: testar o login real em produção e conferir as linhas `login` / `login_falhou` na auditoria.
