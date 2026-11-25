@@ -7,11 +7,16 @@ Guardar o payload bruto antes de normalizar e sincronizar em lotes (limite de te
 
 ## Escopo
 - Tabela de payload bruto (fechada ao cliente) com origem, empresa, parâmetros e data.
-- Fila em Postgres; Vercel Cron processa lotes pequenos e retoma de onde parou.
+- Fila em Postgres; Vercel Schedules (substituto do Cron) processa lotes a cada 15 min e retoma de onde parou.
 - Primeiro caso de ponta a ponta: sincronizar Locais, Usuários e Convênios.
 - Registro de execução (início, fim, falhas) para o painel F7.
 
 ## Critérios de aceite
-- [ ] Rodar o sync duas vezes não duplica nada.
-- [ ] Um job interrompido retoma sem reiniciar.
-- [ ] Falha de uma chamada fica registrada e visível, sem derrubar o lote.
+- [x] Rodar o sync duas vezes não duplica nada: enfileirar é idempotente por dia e (job, página) é único. Cada execução guarda uma cópia nova, de propósito (D-F).
+- [x] Um job interrompido retoma sem reiniciar (posse com prazo no banco; página salva antes de avançar).
+- [x] Falha de uma chamada fica registrada (`ultimo_erro`, `tentativas`), sem derrubar o lote. Passageira volta à fila até 5 vezes.
+
+## Estado (25/11/2026)
+Feito e testado: executor de job (S1), fila no Postgres com `SKIP LOCKED` testada com 8 rodadas paralelas (S2), isolamento do navegador nas tabelas e funções novas (S3), e sincronização real de Locais, Usuários e Convênios (S4: 1, 50 e 128 registros).
+
+Falta: publicar os dois agendamentos (`enfileirar-cadastros` às 05:00 e `processar-fila` a cada 15 min) e disparar uma vez em produção. Depende das credenciais do ProDoctor na Vercel.

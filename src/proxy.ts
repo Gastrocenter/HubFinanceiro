@@ -37,5 +37,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Agendamentos ficam fora: o agendador não tem sessão de usuário.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/agendamentos).*)"],
 };

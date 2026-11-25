@@ -3,7 +3,21 @@ import { describe, expect, it } from "vitest";
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const chavePublica = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-const TABELAS = ["perfis_usuarios", "auditoria"] as const;
+const TABELAS = ["perfis_usuarios", "auditoria", "sync_jobs", "prodoctor_payload_bruto"] as const;
+/** Corpos com colunas reais: assim a recusa só pode ser de permissão, não de pedido malformado. */
+const CORPO_VALIDO: Record<(typeof TABELAS)[number], Record<string, unknown>> = {
+  perfis_usuarios: { usuario_id: "00000000-0000-0000-0000-000000000000", perfil: "admin" },
+  auditoria: { acao: "invasao" },
+  sync_jobs: { empresa: "X", rota: "/x", caminho_da_lista: "x" },
+  prodoctor_payload_bruto: { job_id: 1, empresa: "X", rota: "/x", corpo_pedido: {}, pagina: 1, payload: {} },
+};
+
+/** Funções com argumentos reais, pelo mesmo motivo. */
+const FUNCOES: Record<string, Record<string, unknown>> = {
+  reivindicar_proximo_job: { p_posse_segundos: 60 },
+  registrar_erro_job: { p_id: 1, p_mensagem: "x", p_definitivo: true },
+  liberar_job: { p_id: 1 },
+};
 
 function chamar(tabela: string, init: RequestInit = {}) {
   return fetch(`${url}/rest/v1/${tabela}`, {
@@ -28,8 +42,16 @@ describe.skipIf(!url || !chavePublica)("isolamento do navegador (chave pública)
     });
 
     it(`não grava em ${tabela}`, async () => {
-      const corpo = tabela === "auditoria" ? { acao: "invasao" } : { usuario_id: "00000000-0000-0000-0000-000000000000", perfil: "admin" };
+      const corpo = CORPO_VALIDO[tabela];
       const resposta = await chamar(tabela, { method: "POST", body: JSON.stringify(corpo) });
+      expect(resposta.status).toBe(401);
+      expect((await resposta.json()).code).toBe("42501");
+    });
+  }
+
+  for (const [funcao, argumentos] of Object.entries(FUNCOES)) {
+    it(`não executa a função ${funcao}`, async () => {
+      const resposta = await chamar(`rpc/${funcao}`, { method: "POST", body: JSON.stringify(argumentos) });
       expect(resposta.status).toBe(401);
       expect((await resposta.json()).code).toBe("42501");
     });

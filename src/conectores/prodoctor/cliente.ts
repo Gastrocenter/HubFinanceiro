@@ -5,6 +5,8 @@ import { ErroHttpProDoctor, comRetentativas } from "./retentativa";
 const URL_BASE = "https://open-api.prodoctor.net";
 
 export type ClienteProDoctor = {
+  /** Um pedido de uma página, já com limite de taxa e novas tentativas. */
+  transporte: Transporte;
   /** Busca todas as páginas de uma rota e devolve a lista em `payload.<caminhoDaLista>`. */
   coletar: (rota: string, corpo: Record<string, unknown>, caminhoDaLista: string) => Promise<unknown[]>;
 };
@@ -58,7 +60,7 @@ export function criarClienteProDoctor({
       { relogio },
     );
 
-  return { coletar: (rota, corpo, caminho) => coletarTodasPaginas(transporte, rota, corpo, caminho) };
+  return { transporte, coletar: (rota, corpo, caminho) => coletarTodasPaginas(transporte, rota, corpo, caminho) };
 }
 
 /** Lê o campo `message` da resposta de erro, se houver. Nunca falha. */

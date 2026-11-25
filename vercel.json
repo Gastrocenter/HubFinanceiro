@@ -1,0 +1,24 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "src/app/api/agendamentos/enfileirar-cadastros/route.ts": {
+      "experimentalTriggers": [{ "type": "schedule/v1beta" }]
+    },
+    "src/app/api/agendamentos/processar-fila/route.ts": {
+      "experimentalTriggers": [{ "type": "schedule/v1beta" }]
+    }
+  },
+  "schedules": {
+    "enfileirar-cadastros": {
+      "schedule": "0 5 * * *",
+      "timezone": "America/Sao_Paulo",
+      "function": "api/agendamentos/enfileirar-cadastros"
+    },
+    "processar-fila": {
+      "schedule": "*/15 * * * *",
+      "timezone": "America/Sao_Paulo",
+      "jitter": 15,
+      "function": "api/agendamentos/processar-fila"
+    }
+  }
+}
