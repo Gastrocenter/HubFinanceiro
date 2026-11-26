@@ -15,4 +15,6 @@ Os 50 profissionais do ProDoctor chegam "a revisar", e o ProDoctor não diz quem
 - [x] Sugestão testada nos casos médico, não médico, sem procedimentos e duvidoso.
 - [x] Especialidade preenchida nos 32.185 recebíveis existentes (reprocessamento da carga, sem linha nova nem sumida).
 - [x] Sugestão para os 50 profissionais: 35 médicos, 15 não médicos.
-- [ ] Você confere as sugestões na tela e aceita (ou corrige alguma).
+- [x] Sugestões conferidas e aceitas em produção: 50 profissionais revisados (35 médicos, 15 não médicos), auditados.
+
+**Fechada em 26/11/2026.**
