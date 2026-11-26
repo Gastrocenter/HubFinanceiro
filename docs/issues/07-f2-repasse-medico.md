@@ -56,7 +56,18 @@ Decisões tomadas na implementação:
 - Repasse que some do mês vira `repasse_sumiu` (fecha sozinha se ele voltar); título do lote que sumiu fica `ativo = false`, nunca é apagado.
 - Lote com duas `dataRepasse`, ou linha sem `valorRepassadoMedico`, faz o job do mês falhar de forma visível (fato levantado: um lote tem uma data só).
 
-Falta (depois do deploy): carga real de 12 meses com `RODAR_SYNC_REAL=1 MESES_CARGA=2025-12,...,2026-11 ROTULO_CARGA=carga-inicial npm run test:integracao -- carga-repasse-real` (S6) e teste da tela em produção (S7).
+Carga real de 12 meses (S6) rodada em 26/11/2026, jobs 73–84, rótulo `carga-inicial`. Os 12 jobs concluíram; o teste viu só 9 porque o agendador de produção pegou 3 em paralelo. Conferência em SQL (`conferir_repasse_do_job`) de cada job:
+- Títulos: quantidade e soma exata batem com o bruto em todos os 12 meses. O valor a pagar por título está certo.
+- Linhas: out/2026 (1.493) e nov/2026 (vazio) batem. De dez/2025 a set/2026 faltam 444 linhas no Hub (15.427 no bruto, 14.983 chaves distintas).
+
+**Bug aberto (não corrigido, por decisão de 26/11/2026):** o mesmo procedimento (conta, linha) aparece em lotes de meses diferentes. São 432 chaves, por exemplo: lote de jan com valor e lote de fev com 0, ou o contrário. A chave de `repasses` é `(empresa, codigo_local, conta, linha)` e `chaveDoRepasse` = `chaveDoProcedimento`, então o upsert do mês seguinte move a linha do mês anterior. Efeitos:
+- Faltam linhas de detalhe nos meses anteriores (o total da linha no mês fica menor que o bruto; os títulos não são afetados porque são montados de tudo que veio).
+- A sync diária (janela de 3 meses) vai ficar trocando essas linhas entre os meses da janela.
+- O índice único em `recebivel_id` assume um repasse por procedimento, o que também é falso.
+Nenhuma pendência de repasse foi criada na carga.
+Correção proposta: a chave do repasse passa a incluir `numero_repasse`; `recebivel_id` vira índice não único (um procedimento, vários repasses); ajustar `chaveDoRepasse`, `glosasAposRepasse`/`detectarGlosaAposRepasse` (vários repasses por procedimento), `a_repassar` e D-W; recarregar os 12 meses e rodar o S6 de novo. Também falta perguntar à Sabrina o que significa a linha de valor 0 num segundo lote (estorno, ajuste?).
+
+O S6 continua aberto até a correção. Falta ainda o teste da tela em produção (S7).
 
 Para a issue 09 (perguntar à Sabrina):
 - `nao_incluir_repasse`: "a repassar" só tira os marcados `nao_repassar`.
