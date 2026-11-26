@@ -26,4 +26,4 @@ Carga inicial em produção (26/11/2026): 12 meses, dez/2025 a nov/2026, 32.185 
 
 Correção feita durante a carga: a normalização passou a rodar antes de o job ser marcado como concluído (`aoConcluir`). No código antigo havia uma janela em que o job aparecia "concluído" sem receita ainda.
 
-Falta: verificação da tela `/receita` por você.
+**Fechada em 26/11/2026.** Tela `/receita` testada em produção. Em aberto para a issue 09: confirmar com a Sabrina se `valorTotal` inclui materiais e medicamentos.
