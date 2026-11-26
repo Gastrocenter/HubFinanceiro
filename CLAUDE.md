@@ -14,3 +14,10 @@ TypeScript, Next.js (App Router), Drizzle, Supabase (Postgres e Auth), Vercel, V
 - O Hub nunca sobrescreve dado do ProDoctor: divergência vira pendência.
 - Omie só entra depois da issue 09 (ADR-0003).
 - `scripts/coletar_prodoctor.py` é só referência de endpoints, não faz parte do produto.
+- Antes de `git push`, rode `git log origin/main..HEAD` e mostre ao usuário todo commit que vai subir; aponte os que não são desta tarefa e espere o ok.
+
+## Comandos
+- `npm run check`: tipos, lint e testes unitários (o mesmo que o CI roda). `npm run test:integracao` toca o Supabase e o ProDoctor reais.
+- Revisão de código segue [CODING_STANDARDS.md](CODING_STANDARDS.md).
+- Esperar um deploy: `vercel inspect <url> --wait --timeout 5m`.
+- Ambiente macOS: não há `timeout` do GNU coreutils.
