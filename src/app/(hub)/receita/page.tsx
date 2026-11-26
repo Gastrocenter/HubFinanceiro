@@ -1,9 +1,13 @@
 import { Suspense } from "react";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from "next/link";
 import { rotuloDoMes } from "@/dominio/rotulo-do-mes";
 import { arredondarParaCentavos, formatarReais } from "@/dominio/formatar-reais";
 import { exigirAcesso } from "@/lib/sessao";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
+import { EsqueletoDeTela } from "@/components/esqueleto-de-tela";
+import { Status } from "@/components/status";
+import { Vazio } from "@/components/vazio";
 
 type Linha = {
   agrupamento: "total" | "unidade" | "profissional";
@@ -35,11 +39,10 @@ async function Conteudo({ busca }: { busca: Promise<{ mes?: string }> }) {
 
   if (!mes) {
     return (
-      <main className="mx-auto max-w-4xl p-8">
-        <Link href="/painel" className="text-sm underline">← Painel</Link>
-        <h1 className="mt-2 text-2xl font-semibold">Receita</h1>
-        <p className="mt-4 text-sm text-neutral-600">Ainda não há receita sincronizada.</p>
-      </main>
+      <div className="mx-auto max-w-4xl p-8">
+        <h1 className="text-2xl font-semibold">Receita</h1>
+        <Vazio titulo="Ainda não há receita sincronizada" descricao="A receita aparece aqui depois da primeira sincronização com o ProDoctor." />
+      </div>
     );
   }
 
@@ -51,10 +54,9 @@ async function Conteudo({ busca }: { busca: Promise<{ mes?: string }> }) {
   const profissionais = linhas.filter((l) => l.agrupamento === "profissional").sort(porBruto);
 
   return (
-    <main className="mx-auto max-w-5xl p-8">
-      <Link href="/painel" className="text-sm underline">← Painel</Link>
-      <h1 className="mt-2 text-2xl font-semibold">Receita por competência</h1>
-      <p className="mt-1 text-sm text-neutral-600">
+    <div className="mx-auto max-w-5xl p-8">
+      <h1 className="text-2xl font-semibold">Receita por competência</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
         Procedimentos do ProDoctor pela data do atendimento. Líquido = bruto − glosa + recuperado.
       </p>
 
@@ -64,7 +66,7 @@ async function Conteudo({ busca }: { busca: Promise<{ mes?: string }> }) {
             key={m}
             href={`/receita?mes=${m}`}
             aria-current={m === mes ? "page" : undefined}
-            className={`rounded border px-3 py-1 ${m === mes ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300"}`}
+            className={`rounded-lg border px-3 py-1 ${m === mes ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}
           >
             {rotuloDoMes(m)}
           </Link>
@@ -75,57 +77,80 @@ async function Conteudo({ busca }: { busca: Promise<{ mes?: string }> }) {
         <dl className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {([["Bruto", total.bruto], ["Glosa", total.glosa], ["Recuperado", total.recuperado], ["Líquido", total.liquido]] as const).map(
             ([rotulo, valor]) => (
-              <div key={rotulo} className="rounded border border-neutral-200 p-4">
-                <dt className="text-xs uppercase tracking-wide text-neutral-500">{rotulo}</dt>
+              <div key={rotulo} className="rounded-xl bg-card p-4">
+                <dt className="text-xs uppercase tracking-wide text-muted-foreground">{rotulo}</dt>
                 <dd className="mt-1 text-lg font-semibold tabular-nums">{formatarReais(valor)}</dd>
               </div>
             ),
           )}
         </dl>
       )}
-      <p className="mt-2 text-xs text-neutral-500">{total?.linhas ?? 0} procedimentos em {rotuloDoMes(mes)}</p>
+      <p className="mt-2 text-xs text-muted-foreground">{total?.linhas ?? 0} procedimentos em {rotuloDoMes(mes)}</p>
 
-      <Tabela titulo="Por unidade" linhas={unidades} />
-      <Tabela titulo="Por profissional" linhas={profissionais} mostrarMedico />
-    </main>
+      <Tabela titulo="Por unidade" linhas={unidades} total={total} />
+      <Tabela titulo="Por profissional" linhas={profissionais} total={total} mostrarMedico />
+    </div>
   );
 }
 
-function Tabela({ titulo, linhas, mostrarMedico = false }: { titulo: string; linhas: Linha[]; mostrarMedico?: boolean }) {
+function Tabela({
+  titulo,
+  linhas,
+  total,
+  mostrarMedico = false,
+}: {
+  titulo: string;
+  linhas: Linha[];
+  /** Linha "total" do banco: os grupos particionam a mesma base, então somam exatamente isto. */
+  total?: Linha;
+  mostrarMedico?: boolean;
+}) {
   return (
     <section className="mt-8">
       <h2 className="text-lg font-semibold">{titulo}</h2>
-      <div className="mt-2 overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-neutral-300">
-              <th className="py-2 pr-4">Nome</th>
-              <th className="pr-4 text-right">Proced.</th>
-              <th className="pr-4 text-right">Bruto</th>
-              <th className="pr-4 text-right">Glosa</th>
-              <th className="pr-4 text-right">Líquido</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="mt-3 overflow-hidden rounded-2xl border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nome</TableHead>
+              <TableHead className="text-right">Proced.</TableHead>
+              <TableHead className="text-right">Bruto</TableHead>
+              <TableHead className="text-right">Glosa</TableHead>
+              <TableHead className="text-right">Líquido</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {linhas.map((l) => (
-              <tr key={`${l.agrupamento}-${l.id ?? "sem"}`} className="border-b border-neutral-200">
-                <td className="py-2 pr-4">
-                  {l.id === null ? <span className="text-red-700">{l.nome}</span> : l.nome}
+              <TableRow key={`${l.agrupamento}-${l.id ?? "sem"}`}>
+                <TableCell>
+                  {l.nome}
+                  {l.id === null && <Status tom="erro" className="ml-2">sem de-para</Status>}
                   {mostrarMedico && l.id !== null && l.eh_medico === null && (
-                    <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-900">a revisar</span>
+                    <Status tom="atencao" className="ml-2">a revisar</Status>
                   )}
                   {mostrarMedico && l.eh_medico === false && (
-                    <span className="ml-2 rounded bg-neutral-200 px-1.5 py-0.5 text-xs">não é médico</span>
+                    <Status tom="neutro" className="ml-2">não é médico</Status>
                   )}
-                </td>
-                <td className="pr-4 text-right tabular-nums">{l.linhas}</td>
-                <td className="pr-4 text-right tabular-nums">{formatarReais(l.bruto)}</td>
-                <td className="pr-4 text-right tabular-nums">{formatarReais(l.glosa)}</td>
-                <td className="pr-4 text-right tabular-nums">{formatarReais(l.liquido)}</td>
-              </tr>
+                </TableCell>
+                <TableCell className="text-right tabular-nums">{l.linhas}</TableCell>
+                <TableCell className="text-right tabular-nums">{formatarReais(l.bruto)}</TableCell>
+                <TableCell className="text-right tabular-nums">{formatarReais(l.glosa)}</TableCell>
+                <TableCell className="text-right tabular-nums">{formatarReais(l.liquido)}</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+          {total && (
+            <TableFooter>
+              <TableRow>
+                <TableCell>Total</TableCell>
+                <TableCell className="text-right tabular-nums">{total.linhas}</TableCell>
+                <TableCell className="text-right tabular-nums">{formatarReais(total.bruto)}</TableCell>
+                <TableCell className="text-right tabular-nums">{formatarReais(total.glosa)}</TableCell>
+                <TableCell className="text-right tabular-nums">{formatarReais(total.liquido)}</TableCell>
+              </TableRow>
+            </TableFooter>
+          )}
+        </Table>
       </div>
     </section>
   );
@@ -133,7 +158,7 @@ function Tabela({ titulo, linhas, mostrarMedico = false }: { titulo: string; lin
 
 export default function Receita({ searchParams }: { searchParams: Promise<{ mes?: string }> }) {
   return (
-    <Suspense fallback={<p className="p-8">Carregando…</p>}>
+    <Suspense fallback={<EsqueletoDeTela indicadores={4} tabelas={2} />}>
       <Conteudo busca={searchParams} />
     </Suspense>
   );

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from "next/link";
 import { formatarReais } from "@/dominio/formatar-reais";
 import { rotuloDoMes } from "@/dominio/rotulo-do-mes";
@@ -7,6 +8,9 @@ import { lerTudo } from "@/lib/ler-tudo";
 import type { SituacaoDaConta } from "@/contas/ler-contas";
 import { exigirAcesso } from "@/lib/sessao";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
+import { EsqueletoDeTela } from "@/components/esqueleto-de-tela";
+import { Status } from "@/components/status";
+import { Vazio } from "@/components/vazio";
 
 type LinhaDoResumo = {
   natureza: "pagar" | "receber" | "outra";
@@ -72,10 +76,9 @@ async function Conteudo({ busca }: { busca: Promise<{ mes?: string }> }) {
     : [];
 
   return (
-    <main className="mx-auto max-w-6xl p-8">
-      <Link href="/painel" className="text-sm underline">← Painel</Link>
-      <h1 className="mt-2 text-2xl font-semibold">Contas a pagar e a receber</h1>
-      <p className="mt-1 text-sm text-neutral-600">
+    <div className="mx-auto max-w-6xl p-8">
+      <h1 className="text-2xl font-semibold">Contas a pagar e a receber</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
         Do ProDoctor, só leitura, pelo mês de vencimento. De paciente o Hub não guarda nome nem histórico: aparece só
         como &quot;Paciente&quot;.
       </p>
@@ -85,7 +88,7 @@ async function Conteudo({ busca }: { busca: Promise<{ mes?: string }> }) {
           <nav className="mt-6 flex flex-wrap gap-2 text-sm" aria-label="Mês de vencimento">
             {disponiveis.map((m) => (
               <Link key={m} href={`/contas?mes=${m}`} aria-current={m === mes ? "page" : undefined}
-                className={`rounded border px-3 py-1 ${m === mes ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300"}`}>
+                className={`rounded-lg border px-3 py-1 ${m === mes ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
                 {rotuloDoMes(m)}
               </Link>
             ))}
@@ -93,8 +96,8 @@ async function Conteudo({ busca }: { busca: Promise<{ mes?: string }> }) {
 
           <dl className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
             {cartoes.map(([rotulo, valor]) => (
-              <div key={rotulo} className="rounded border border-neutral-200 p-4">
-                <dt className="text-xs uppercase tracking-wide text-neutral-500">{rotulo}</dt>
+              <div key={rotulo} className="rounded-xl bg-card p-4">
+                <dt className="text-xs uppercase tracking-wide text-muted-foreground">{rotulo}</dt>
                 <dd className="mt-1 text-lg font-semibold tabular-nums">{formatarReais(valor)}</dd>
               </div>
             ))}
@@ -102,78 +105,78 @@ async function Conteudo({ busca }: { busca: Promise<{ mes?: string }> }) {
 
           <section className="mt-8">
             <h2 className="text-lg font-semibold">Por grupo de receita/despesa em {rotuloDoMes(mes)}</h2>
-            <div className="mt-2 overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-neutral-300">
-                    <th className="py-2 pr-4">Natureza</th>
-                    <th className="pr-4">Situação</th>
-                    <th className="pr-4">Grupo</th>
-                    <th className="pr-4 text-right">Contas</th>
-                    <th className="pr-4 text-right">Valor</th>
-                    <th className="pr-4 text-right">Efetivado</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <div className="mt-3 overflow-hidden rounded-2xl border bg-card">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Natureza</TableHead>
+                    <TableHead>Situação</TableHead>
+                    <TableHead>Grupo</TableHead>
+                    <TableHead className="text-right">Contas</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead className="text-right">Efetivado</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {resumo.map((l) => (
-                    <tr key={`${l.natureza}:${l.situacao}:${l.grupo}`} className="border-b border-neutral-200">
-                      <td className="py-2 pr-4">{l.natureza === "pagar" ? "A pagar" : l.natureza === "receber" ? "A receber" : "Outra"}</td>
-                      <td className="pr-4">{l.situacao}</td>
-                      <td className="pr-4">{l.nome_grupo || l.grupo || "—"}</td>
-                      <td className="pr-4 text-right tabular-nums">{l.contas}</td>
-                      <td className="pr-4 text-right tabular-nums">{formatarReais(l.valor)}</td>
-                      <td className="pr-4 text-right tabular-nums">{formatarReais(l.efetivado)}</td>
-                    </tr>
+                    <TableRow key={`${l.natureza}:${l.situacao}:${l.grupo}`}>
+                      <TableCell>{l.natureza === "pagar" ? "A pagar" : l.natureza === "receber" ? "A receber" : "Outra"}</TableCell>
+                      <TableCell>{l.situacao}</TableCell>
+                      <TableCell>{l.nome_grupo || l.grupo || "—"}</TableCell>
+                      <TableCell className="text-right tabular-nums">{l.contas}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatarReais(l.valor)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatarReais(l.efetivado)}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </section>
 
           <section className="mt-8">
             <h2 className="text-lg font-semibold">Contas a pagar com vencimento em {rotuloDoMes(mes)}</h2>
             {aPagar.length === 0 ? (
-              <p className="mt-2 text-sm text-neutral-600">Nenhuma conta a pagar neste mês.</p>
+              <Vazio titulo="Nenhuma conta a pagar neste mês" descricao={`Não há título a pagar com vencimento em ${rotuloDoMes(mes)}.`} />
             ) : (
-              <div className="mt-2 overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-neutral-300">
-                      <th className="py-2 pr-4">Vencimento</th>
-                      <th className="pr-4">Nº</th>
-                      <th className="pr-4">Fornecedor</th>
-                      <th className="pr-4">Grupo</th>
-                      <th className="pr-4 text-right">Valor</th>
-                      <th className="pr-4">Situação</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <div className="mt-3 overflow-hidden rounded-2xl border bg-card">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Vencimento</TableHead>
+                      <TableHead>Nº</TableHead>
+                      <TableHead>Fornecedor</TableHead>
+                      <TableHead>Grupo</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                      <TableHead>Situação</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {aPagar.map((c) => (
-                      <tr key={`${c.codigo_local}:${c.numero}`} className="border-b border-neutral-200">
-                        <td className="py-2 pr-4 tabular-nums">{dataBr(c.data_vencimento)}</td>
-                        <td className="pr-4 tabular-nums">{c.numero}</td>
-                        <td className="pr-4">{c.cliente_fornecedor ?? "—"}</td>
-                        <td className="pr-4">{c.nome_grupo || "—"}</td>
-                        <td className="pr-4 text-right tabular-nums">{formatarReais(c.valor)}</td>
-                        <td className="pr-4">{c.situacao === "PAGA" ? `Paga em ${dataBr(c.data_efetivacao)}` : "Em aberto"}</td>
-                      </tr>
+                      <TableRow key={`${c.codigo_local}:${c.numero}`}>
+                        <TableCell className="tabular-nums">{dataBr(c.data_vencimento)}</TableCell>
+                        <TableCell className="tabular-nums">{c.numero}</TableCell>
+                        <TableCell>{c.cliente_fornecedor ?? "—"}</TableCell>
+                        <TableCell>{c.nome_grupo || "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatarReais(c.valor)}</TableCell>
+                        <TableCell>{c.situacao === "PAGA" ? <Status tom="sucesso">Paga em {dataBr(c.data_efetivacao)}</Status> : <Status tom="neutro">Em aberto</Status>}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
           </section>
         </>
       ) : (
-        <p className="mt-4 text-sm text-neutral-600">Ainda não há contas sincronizadas.</p>
+        <Vazio titulo="Ainda não há contas sincronizadas" descricao="As contas a pagar e a receber aparecem aqui depois da sincronização com o ProDoctor." />
       )}
-    </main>
+    </div>
   );
 }
 
 export default function Contas({ searchParams }: { searchParams: Promise<{ mes?: string }> }) {
   return (
-    <Suspense fallback={<p className="p-8">Carregando…</p>}>
+    <Suspense fallback={<EsqueletoDeTela indicadores={4} tabelas={2} largura="max-w-6xl" />}>
       <Conteudo busca={searchParams} />
     </Suspense>
   );

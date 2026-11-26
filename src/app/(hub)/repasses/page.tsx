@@ -1,10 +1,15 @@
 import { Suspense } from "react";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from "next/link";
 import { rotuloDoMes } from "@/dominio/rotulo-do-mes";
 import { formatarData as dataBr } from "@/dominio/formatar-data";
 import { formatarCentavos, formatarReais } from "@/dominio/formatar-reais";
 import { exigirAcesso } from "@/lib/sessao";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
+import { CircleCheck } from "lucide-react";
+import { EsqueletoDeTela } from "@/components/esqueleto-de-tela";
+import { Status } from "@/components/status";
+import { Vazio } from "@/components/vazio";
 
 type Linha = {
   agrupamento: "total" | "profissional" | "titulo";
@@ -32,8 +37,9 @@ type ARepassar = {
 function Nome({ nome, id, ehMedico }: { nome: string; id: number | null; ehMedico: boolean | null }) {
   return (
     <>
-      {id === null ? <span className="text-red-700" title="Sem profissional no de-para">{nome}</span> : nome}
-      {ehMedico === false && <span className="ml-2 rounded bg-neutral-200 px-1.5 py-0.5 text-xs">não é médico</span>}
+      {nome}
+      {id === null && <Status tom="erro" className="ml-2" title="Sem profissional no de-para">sem de-para</Status>}
+      {ehMedico === false && <Status tom="neutro" className="ml-2">não é médico</Status>}
     </>
   );
 }
@@ -64,10 +70,9 @@ async function Conteudo({ busca }: { busca: Promise<{ mes?: string }> }) {
   const pendentes = (aRepassar ?? []) as ARepassar[];
 
   return (
-    <main className="mx-auto max-w-5xl p-8">
-      <Link href="/painel" className="text-sm underline">← Painel</Link>
-      <h1 className="mt-2 text-2xl font-semibold">Repasse ao profissional</h1>
-      <p className="mt-1 text-sm text-neutral-600">
+    <div className="mx-auto max-w-5xl p-8">
+      <h1 className="text-2xl font-semibold">Repasse ao profissional</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
         Lotes do ProDoctor pela data do repasse. Um título por profissional e lote; o valor é o repassado ao profissional
         calculado pelo ProDoctor, arredondado uma vez no total do título.
       </p>
@@ -80,7 +85,7 @@ async function Conteudo({ busca }: { busca: Promise<{ mes?: string }> }) {
                 key={m}
                 href={`/repasses?mes=${m}`}
                 aria-current={m === mes ? "page" : undefined}
-                className={`rounded border px-3 py-1 ${m === mes ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300"}`}
+                className={`rounded-lg border px-3 py-1 ${m === mes ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}
               >
                 {rotuloDoMes(m)}
               </Link>
@@ -91,8 +96,8 @@ async function Conteudo({ busca }: { busca: Promise<{ mes?: string }> }) {
             <dl className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
               {([["A pagar", formatarCentavos(total.total_centavos)], ["Títulos", String(total.titulos)], ["Procedimentos", String(total.linhas)]] as const).map(
                 ([rotulo, valor]) => (
-                  <div key={rotulo} className="rounded border border-neutral-200 p-4">
-                    <dt className="text-xs uppercase tracking-wide text-neutral-500">{rotulo}</dt>
+                  <div key={rotulo} className="rounded-xl bg-card p-4">
+                    <dt className="text-xs uppercase tracking-wide text-muted-foreground">{rotulo}</dt>
                     <dd className="mt-1 text-lg font-semibold tabular-nums">{valor}</dd>
                   </div>
                 ),
@@ -102,98 +107,121 @@ async function Conteudo({ busca }: { busca: Promise<{ mes?: string }> }) {
 
           <section className="mt-8">
             <h2 className="text-lg font-semibold">Por profissional em {rotuloDoMes(mes)}</h2>
-            <div className="mt-2 overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-neutral-300">
-                    <th className="py-2 pr-4">Profissional</th>
-                    <th className="pr-4 text-right">Títulos</th>
-                    <th className="pr-4 text-right">Proced.</th>
-                    <th className="pr-4 text-right">A pagar</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <div className="mt-3 overflow-hidden rounded-2xl border bg-card">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Profissional</TableHead>
+                    <TableHead className="text-right">Títulos</TableHead>
+                    <TableHead className="text-right">Proced.</TableHead>
+                    <TableHead className="text-right">A pagar</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {profissionais.map((l, i) => (
-                    <tr key={i} className="border-b border-neutral-200">
-                      <td className="py-2 pr-4"><Nome nome={l.nome} id={l.profissional_id} ehMedico={l.eh_medico} /></td>
-                      <td className="pr-4 text-right tabular-nums">{l.titulos}</td>
-                      <td className="pr-4 text-right tabular-nums">{l.linhas}</td>
-                      <td className="pr-4 text-right tabular-nums">{formatarCentavos(l.total_centavos)}</td>
-                    </tr>
+                    <TableRow key={i}>
+                      <TableCell><Nome nome={l.nome} id={l.profissional_id} ehMedico={l.eh_medico} /></TableCell>
+                      <TableCell className="text-right tabular-nums">{l.titulos}</TableCell>
+                      <TableCell className="text-right tabular-nums">{l.linhas}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatarCentavos(l.total_centavos)}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+                {total && (
+                  <TableFooter>
+                    <TableRow>
+                      <TableCell>Total</TableCell>
+                      <TableCell className="text-right tabular-nums">{total.titulos}</TableCell>
+                      <TableCell className="text-right tabular-nums">{total.linhas}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatarCentavos(total.total_centavos)}</TableCell>
+                    </TableRow>
+                  </TableFooter>
+                )}
+              </Table>
             </div>
           </section>
 
           <section className="mt-8">
             <h2 className="text-lg font-semibold">Títulos por profissional e lote</h2>
-            <div className="mt-2 overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-neutral-300">
-                    <th className="py-2 pr-4">Data</th>
-                    <th className="pr-4">Lote</th>
-                    <th className="pr-4">Profissional</th>
-                    <th className="pr-4 text-right">Proced.</th>
-                    <th className="pr-4 text-right">Valor</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <div className="mt-3 overflow-hidden rounded-2xl border bg-card">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Lote</TableHead>
+                    <TableHead>Profissional</TableHead>
+                    <TableHead className="text-right">Proced.</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {titulos.map((l, i) => (
-                    <tr key={i} className="border-b border-neutral-200">
-                      <td className="py-2 pr-4 tabular-nums">{dataBr(l.data_repasse)}</td>
-                      <td className="pr-4 tabular-nums">{l.numero_repasse}</td>
-                      <td className="pr-4"><Nome nome={l.nome} id={l.profissional_id} ehMedico={l.eh_medico} /></td>
-                      <td className="pr-4 text-right tabular-nums">{l.linhas}</td>
-                      <td className="pr-4 text-right tabular-nums">{formatarCentavos(l.total_centavos)}</td>
-                    </tr>
+                    <TableRow key={i}>
+                      <TableCell className="tabular-nums">{dataBr(l.data_repasse)}</TableCell>
+                      <TableCell className="tabular-nums">{l.numero_repasse}</TableCell>
+                      <TableCell><Nome nome={l.nome} id={l.profissional_id} ehMedico={l.eh_medico} /></TableCell>
+                      <TableCell className="text-right tabular-nums">{l.linhas}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatarCentavos(l.total_centavos)}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+                {total && (
+                  <TableFooter>
+                    <TableRow>
+                      <TableCell colSpan={3}>Total ({total.titulos} títulos)</TableCell>
+                      <TableCell className="text-right tabular-nums">{total.linhas}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatarCentavos(total.total_centavos)}</TableCell>
+                    </TableRow>
+                  </TableFooter>
+                )}
+              </Table>
             </div>
           </section>
         </>
       ) : (
-        <p className="mt-4 text-sm text-neutral-600">Ainda não há repasse sincronizado.</p>
+        <Vazio titulo="Ainda não há repasse sincronizado" descricao="Os lotes de repasse aparecem aqui depois da sincronização com o ProDoctor." />
       )}
 
       <section className="mt-10">
         <h2 className="text-lg font-semibold">A repassar</h2>
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 text-sm text-muted-foreground">
           Procedimentos no Hub ainda sem repasse no ProDoctor (fora os marcados &quot;não repassar&quot;). Mostra o bruto do
           procedimento; o Hub não estima o valor do repasse.
         </p>
-        <div className="mt-2 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-neutral-300">
-                <th className="py-2 pr-4">Profissional</th>
-                <th className="pr-4 text-right">Proced.</th>
-                <th className="pr-4 text-right">Bruto</th>
-                <th className="pr-4 text-right">Desde</th>
-              </tr>
-            </thead>
-            <tbody>
+        {pendentes.length === 0 ? (
+          <Vazio icone={CircleCheck} titulo="Nada a repassar" descricao="Todo procedimento do Hub já tem repasse no ProDoctor." />
+        ) : (
+        <div className="mt-3 overflow-hidden rounded-2xl border bg-card">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Profissional</TableHead>
+                <TableHead className="text-right">Proced.</TableHead>
+                <TableHead className="text-right">Bruto</TableHead>
+                <TableHead className="text-right">Desde</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {pendentes.map((l, i) => (
-                <tr key={i} className="border-b border-neutral-200">
-                  <td className="py-2 pr-4"><Nome nome={l.nome || "Sem profissional"} id={l.profissional_id} ehMedico={l.eh_medico} /></td>
-                  <td className="pr-4 text-right tabular-nums">{l.procedimentos}</td>
-                  <td className="pr-4 text-right tabular-nums">{formatarReais(l.bruto)}</td>
-                  <td className="pr-4 text-right tabular-nums">{rotuloDoMes(l.mes_mais_antigo)}</td>
-                </tr>
+                <TableRow key={i}>
+                  <TableCell><Nome nome={l.nome || "Sem profissional"} id={l.profissional_id} ehMedico={l.eh_medico} /></TableCell>
+                  <TableCell className="text-right tabular-nums">{l.procedimentos}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatarReais(l.bruto)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{rotuloDoMes(l.mes_mais_antigo)}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
+        )}
       </section>
-    </main>
+    </div>
   );
 }
 
 export default function Repasses({ searchParams }: { searchParams: Promise<{ mes?: string }> }) {
   return (
-    <Suspense fallback={<p className="p-8">Carregando…</p>}>
+    <Suspense fallback={<EsqueletoDeTela indicadores={3} tabelas={3} />}>
       <Conteudo busca={searchParams} />
     </Suspense>
   );
