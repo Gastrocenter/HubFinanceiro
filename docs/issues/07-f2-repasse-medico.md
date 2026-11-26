@@ -60,14 +60,17 @@ Carga real de 12 meses (S6) rodada em 26/11/2026, jobs 73–84, rótulo `carga-i
 - Títulos: quantidade e soma exata batem com o bruto em todos os 12 meses. O valor a pagar por título está certo.
 - Linhas: out/2026 (1.493) e nov/2026 (vazio) batem. De dez/2025 a set/2026 faltam 444 linhas no Hub (15.427 no bruto, 14.983 chaves distintas).
 
-**Bug aberto (não corrigido, por decisão de 26/11/2026):** o mesmo procedimento (conta, linha) aparece em lotes de meses diferentes. São 432 chaves, por exemplo: lote de jan com valor e lote de fev com 0, ou o contrário. A chave de `repasses` é `(empresa, codigo_local, conta, linha)` e `chaveDoRepasse` = `chaveDoProcedimento`, então o upsert do mês seguinte move a linha do mês anterior. Efeitos:
-- Faltam linhas de detalhe nos meses anteriores (o total da linha no mês fica menor que o bruto; os títulos não são afetados porque são montados de tudo que veio).
-- A sync diária (janela de 3 meses) vai ficar trocando essas linhas entre os meses da janela.
-- O índice único em `recebivel_id` assume um repasse por procedimento, o que também é falso.
-Nenhuma pendência de repasse foi criada na carga.
-Correção proposta: a chave do repasse passa a incluir `numero_repasse`; `recebivel_id` vira índice não único (um procedimento, vários repasses); ajustar `chaveDoRepasse`, `glosasAposRepasse`/`detectarGlosaAposRepasse` (vários repasses por procedimento), `a_repassar` e D-W; recarregar os 12 meses e rodar o S6 de novo. Também falta perguntar à Sabrina o que significa a linha de valor 0 num segundo lote (estorno, ajuste?).
+**Bug dos lotes (corrigido em 26/11/2026):** o mesmo procedimento (conta, linha) aparece em lotes de meses diferentes. São 432 chaves, por exemplo: lote de jan com valor e lote de fev com 0, ou o contrário. A chave de `repasses` era só a do procedimento, então o upsert do mês seguinte movia a linha do mês anterior. Faltavam linhas de detalhe nos meses anteriores; os títulos não foram afetados. Nenhuma pendência foi criada.
+Correção (migration `20261126104824_repasse_por_lote`):
+- Um repasse é um procedimento num lote: a chave passa a ser `(empresa, codigo_local, conta, linha, numero_repasse)`, e `chaveDoRepasse` inclui o lote.
+- Um recebível pode ter vários repasses: `recebivel_id` deixou de ser único.
+- `planejarGravacao` recebe a chave de quem chama (antes usava a do procedimento fixa).
+- Glosa após repasse traz todos os repasses do procedimento em `detalhes.repasses`.
+- `repasse_sem_procedimento` continua por procedimento (dois lotes, uma pendência); `repasse_sumiu` passa a ser por repasse (procedimento e lote).
+- Testes: S2 (o lote refeito entra como novo e o antigo some), `planejarGravacao` (dois lotes, duas linhas), S4 (dois repasses na pendência) e o teste SQL `aplicar_mes_de_repasses` (dois lotes em meses diferentes ficam), todos vistos falhando antes da correção.
+Falta, depois do deploy: recarregar os 12 meses e rodar o S6 de novo. Perguntar à Sabrina o que significa a linha de valor 0 num segundo lote (estorno, ajuste?).
 
-O S6 continua aberto até a correção. Falta ainda o teste da tela em produção (S7).
+O S6 continua aberto até a recarga. Falta ainda o teste da tela em produção (S7).
 
 Para a issue 09 (perguntar à Sabrina):
 - `nao_incluir_repasse`: "a repassar" só tira os marcados `nao_repassar`.

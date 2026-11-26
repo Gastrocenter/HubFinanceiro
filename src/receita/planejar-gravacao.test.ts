@@ -24,7 +24,7 @@ describe("planejarGravacao", () => {
     const atuais = [a, b].map((registro) => ({ registro, vistoNaUltimaSync: true }));
     const vinculosAtuais = new Map([[chaveDoProcedimento(a), semProfissional], [chaveDoProcedimento(b), ligado]]);
 
-    const plano = planejarGravacao({ vindos: [a, b], diferenca: diferencaDoMes(atuais, [a, b]), vinculosAtuais, vincular: () => ligado });
+    const plano = planejarGravacao({ vindos: [a, b], diferenca: diferencaDoMes(atuais, [a, b]), vinculosAtuais, vincular: () => ligado, chave: chaveDoProcedimento });
 
     expect(plano.map((g) => chaveDoProcedimento(g.registro))).toEqual([chaveDoProcedimento(a)]);
     expect(plano[0].vinculos).toEqual(ligado);
@@ -39,7 +39,22 @@ describe("planejarGravacao", () => {
       diferenca: diferencaDoMes(atuais, [a, novo]),
       vinculosAtuais: new Map([[chaveDoProcedimento(a), ligado]]),
       vincular: () => ligado,
+      chave: chaveDoProcedimento,
     });
     expect(plano.map((g) => g.registro.conta)).toEqual(["N"]);
+  });
+
+  it("usa a chave que recebe: o mesmo procedimento em dois lotes são duas linhas, cada uma com o seu vínculo", () => {
+    const chave = (r: { codigoLocal: string; conta: string; linha: string; lote: string }) => `${chaveDoProcedimento(r)}:${r.lote}`;
+    const lote1 = { codigoLocal: "1", conta: "A", linha: "1", lote: "8363" };
+    const lote2 = { ...lote1, lote: "8429" };
+    const plano = planejarGravacao({
+      vindos: [lote1, lote2],
+      diferenca: { novos: [lote2], alterados: [], sumiram: [], voltaram: [] },
+      vinculosAtuais: new Map([[chave(lote1), semProfissional]]),
+      vincular: () => ligado,
+      chave,
+    });
+    expect(plano.map((g) => g.registro.lote)).toEqual(["8363", "8429"]);
   });
 });

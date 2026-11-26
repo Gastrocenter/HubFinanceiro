@@ -18,14 +18,26 @@ describe("diferencaDoMesDeRepasse", () => {
   it("lote novo entra como novo; lote editado traz os campos que mudaram; estornado (sumiu do mês) é marcado", () => {
     const a = rep("A");
     const b = rep("B");
-    const bEditado = rep("B", { valorRepassadoMedico: "80", numeroRepasse: "8999" });
+    const bEditado = rep("B", { valorRepassadoMedico: "80", dataRepasse: "2026-10-21" });
     const c = rep("C", { numeroRepasse: "9000" });
 
     expect(diferencaDoMesDeRepasse([atual(a), atual(b)], [bEditado, c])).toEqual({
       ...vazio,
       novos: [c],
-      alterados: [{ registro: bEditado, campos: ["numeroRepasse", "valorRepassadoMedico"] }],
+      alterados: [{ registro: bEditado, campos: ["dataRepasse", "valorRepassadoMedico"] }],
       sumiram: [chaveDoRepasse(a)],
+    });
+  });
+
+  it("o mesmo procedimento em dois lotes são dois repasses: o lote refeito entra como novo e o antigo some", () => {
+    const noLote1 = rep("A", { numeroRepasse: "8363", valorRepassadoMedico: "47.055" });
+    const noLote2 = rep("A", { numeroRepasse: "8429", valorRepassadoMedico: "0" });
+
+    expect(diferencaDoMesDeRepasse([atual(noLote1)], [noLote1, noLote2])).toEqual({ ...vazio, novos: [noLote2] });
+    expect(diferencaDoMesDeRepasse([atual(noLote1)], [noLote2])).toEqual({
+      ...vazio,
+      novos: [noLote2],
+      sumiram: [chaveDoRepasse(noLote1)],
     });
   });
 
@@ -34,8 +46,8 @@ describe("diferencaDoMesDeRepasse", () => {
     expect(diferencaDoMesDeRepasse([atual(rep("A"), false)], [])).toEqual(vazio);
   });
 
-  it("a chave é a do procedimento (unidade, conta, linha), a mesma do recebível", () => {
-    expect(chaveDoRepasse(rep("A"))).toBe("1:A:1");
-    expect(chaveDoRepasse(rep("A", { numeroRepasse: "1" }))).toBe(chaveDoRepasse(rep("A")));
+  it("a chave é a do procedimento (unidade, conta, linha) mais o lote", () => {
+    expect(chaveDoRepasse(rep("A"))).toBe("1:A:1:8908");
+    expect(chaveDoRepasse(rep("A", { numeroRepasse: "1" }))).not.toBe(chaveDoRepasse(rep("A")));
   });
 });

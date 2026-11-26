@@ -75,7 +75,7 @@ export async function normalizarRepassesDoJob(db: SupabaseClient, job: { id: str
     return vinculos.get(chave)!;
   };
 
-  const gravar = planejarGravacao({ vindos, diferenca: dif, vinculosAtuais, vincular }).map(({ registro, vinculos }) => ({
+  const gravar = planejarGravacao({ vindos, diferenca: dif, vinculosAtuais, vincular, chave: chaveDoRepasse }).map(({ registro, vinculos }) => ({
     ...paraBanco(registro),
     ...vinculos,
   }));

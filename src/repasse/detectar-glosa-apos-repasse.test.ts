@@ -18,7 +18,7 @@ const repasse = { numeroRepasse: "8908", dataRepasse: "2026-10-20", valorRepassa
 
 describe("detectarGlosaAposRepasse", () => {
   it("glosa nova ou alterada em procedimento já repassado vira pendência com os valores (D-V)", () => {
-    const repassados = new Map([["1:A:1", repasse], ["1:B:1", repasse]]);
+    const repassados = new Map([["1:A:1", [repasse]], ["1:B:1", [repasse]]]);
     const pendencias = detectarGlosaAposRepasse(
       [
         { antes: proc("A"), depois: proc("A", { valorGlosa: "30" }) }, // glosa nova
@@ -30,25 +30,34 @@ describe("detectarGlosaAposRepasse", () => {
     expect(pendencias).toEqual([
       {
         referencia: "1:A:1|valorGlosa=30",
-        detalhes: { procedimento: "1:A:1", ...repasse, glosa: { valorGlosa: { antes: null, depois: "30" } } },
+        detalhes: { procedimento: "1:A:1", repasses: [repasse], glosa: { valorGlosa: { antes: null, depois: "30" } } },
       },
       {
         referencia: "1:B:1|totalGlosasTaxasDiarias=7.5",
-        detalhes: { procedimento: "1:B:1", ...repasse, glosa: { totalGlosasTaxasDiarias: { antes: "5", depois: "7.5" } } },
+        detalhes: { procedimento: "1:B:1", repasses: [repasse], glosa: { totalGlosasTaxasDiarias: { antes: "5", depois: "7.5" } } },
       },
     ]);
   });
 
   it("a glosa mudar de novo gera outra referência: a pendência aberta da primeira mudança não engole a segunda", () => {
-    const repassados = new Map([["1:A:1", repasse]]);
+    const repassados = new Map([["1:A:1", [repasse]]]);
     const [primeira] = detectarGlosaAposRepasse([{ antes: proc("A"), depois: proc("A", { valorGlosa: "30" }) }], repassados);
     const [segunda] = detectarGlosaAposRepasse([{ antes: proc("A", { valorGlosa: "30" }), depois: proc("A", { valorGlosa: "45.00" }) }], repassados);
     expect(segunda.referencia).toBe("1:A:1|valorGlosa=45");
     expect(segunda.referencia).not.toBe(primeira.referencia);
   });
 
+  it("procedimento repassado em dois lotes: a pendência traz os dois repasses", () => {
+    const refeito = { numeroRepasse: "8999", dataRepasse: "2026-11-20", valorRepassadoMedico: "0" };
+    const [pendencia] = detectarGlosaAposRepasse(
+      [{ antes: proc("A"), depois: proc("A", { valorGlosa: "30" }) }],
+      new Map([["1:A:1", [repasse, refeito]]]),
+    );
+    expect(pendencia.detalhes.repasses).toEqual([repasse, refeito]);
+  });
+
   it("mudança que não é de glosa, ou só de grafia (vazio ↔ 0, 30 ↔ 30.00), não gera pendência", () => {
-    const repassados = new Map([["1:A:1", repasse]]);
+    const repassados = new Map([["1:A:1", [repasse]]]);
     expect(
       detectarGlosaAposRepasse(
         [

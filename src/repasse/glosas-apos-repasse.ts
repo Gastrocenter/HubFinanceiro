@@ -20,7 +20,7 @@ export async function glosasAposRepasse(
   const antes = new Map(atuais.map((a) => [chaveDoProcedimento(a.registro), a.registro]));
   const alterados = dif.alterados.map(({ registro }) => ({ antes: antes.get(chaveDoProcedimento(registro))!, depois: registro }));
   const contas = [...new Set(alterados.map((a) => a.depois.conta))];
-  const repassados = new Map<string, RepasseFeito>();
+  const repassados = new Map<string, RepasseFeito[]>();
   for (let i = 0; i < contas.length; i += CONTAS_POR_CONSULTA) {
     const lote = contas.slice(i, i + CONTAS_POR_CONSULTA);
     const linhas = await lerTudo(
@@ -36,11 +36,10 @@ export async function glosasAposRepasse(
       "ler repasses das contas alteradas",
     );
     for (const l of linhas as unknown as Record<string, string | null>[]) {
-      repassados.set(chaveDoProcedimento({ codigoLocal: l.codigo_local!, conta: l.conta!, linha: l.linha! }), {
-        numeroRepasse: l.numero_repasse!,
-        dataRepasse: l.data_repasse!,
-        valorRepassadoMedico: l.valor_repassado_medico,
-      });
+      const chave = chaveDoProcedimento({ codigoLocal: l.codigo_local!, conta: l.conta!, linha: l.linha! });
+      const doProcedimento = repassados.get(chave) ?? [];
+      doProcedimento.push({ numeroRepasse: l.numero_repasse!, dataRepasse: l.data_repasse!, valorRepassadoMedico: l.valor_repassado_medico });
+      repassados.set(chave, doProcedimento);
     }
   }
   return detectarGlosaAposRepasse(alterados, repassados);

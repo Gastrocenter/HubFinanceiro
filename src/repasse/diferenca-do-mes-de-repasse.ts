@@ -5,8 +5,12 @@ import type { RegistroDeRepasse } from "./ler-repasses";
 export type RepasseAtual = Atual<RegistroDeRepasse>;
 export type DiferencaDoMesDeRepasse = Diferenca<RegistroDeRepasse>;
 
-/** A chave do procedimento repassado (unidade, conta, linha): a mesma do recebível, que liga os dois. */
-export const chaveDoRepasse = (r: Pick<RegistroDeRepasse, "codigoLocal" | "conta" | "linha">) => chaveDoProcedimento(r);
+/**
+ * Um repasse é um procedimento (unidade, conta, linha) num lote: o mesmo procedimento pode voltar num lote de
+ * outro mês (ex.: lote de jan com valor e lote de fev com 0). O recebível se liga pela parte do procedimento.
+ */
+export const chaveDoRepasse = (r: Pick<RegistroDeRepasse, "codigoLocal" | "conta" | "linha" | "numeroRepasse">) =>
+  `${chaveDoProcedimento(r)}:${r.numeroRepasse}`;
 
 export const semRepasseRepetido = (vindos: RegistroDeRepasse[]) => semRepetidosPorChave(vindos, chaveDoRepasse);
 

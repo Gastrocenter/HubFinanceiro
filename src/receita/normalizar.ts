@@ -91,7 +91,7 @@ export async function normalizarProcedimentosDoJob(
   const glosas = await glosasAposRepasse(db, job.empresa, dif, atuais);
 
   // Regrava o que mudou no ProDoctor e também o que só mudou de vínculo (ex.: cadastro que passou a existir).
-  const gravar = planejarGravacao({ vindos, diferenca: dif, vinculosAtuais, vincular: vinculador.vincular }).map(({ registro, vinculos }) => ({
+  const gravar = planejarGravacao({ vindos, diferenca: dif, vinculosAtuais, vincular: vinculador.vincular, chave: chaveDoProcedimento }).map(({ registro, vinculos }) => ({
     ...paraBanco(registro),
     ...vinculos,
   }));

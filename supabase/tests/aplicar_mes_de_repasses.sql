@@ -1,6 +1,7 @@
 -- Teste S5 (issue 07): aplicar_mes_de_repasses é atômica e idempotente, guarda valores exatos, liga o repasse
 -- ao recebível pela chave do procedimento, mantém os títulos do mês, marca estornos e cria pendências (D-W) sem
--- duplicar. Termina em erro de propósito (rollback). Esperado: "TESTE_OK".
+-- duplicar. Um repasse é (procedimento, lote): o mesmo procedimento num lote de outro mês não apaga o primeiro.
+-- Termina em erro de propósito (rollback). Esperado: "TESTE_OK".
 do $$
 declare
   falhas text := '';
@@ -48,26 +49,37 @@ begin
   -- O procedimento B chega depois: na próxima rodada o repasse liga e a pendência fecha.
   perform public.aplicar_mes_de_procedimentos('TESTE_R5', '1999-01', $j${"gravar":[
     {"codigo_local":"1","conta":"B","linha":"1","data":"1999-01-06","valor_total":"50"}]}$j$);
-  -- Lote editado: A some (estorno), B muda de valor, o título muda e um título antigo do mês deixa de vir.
+  -- Lote refeito: L1 some (A e B), B volta no lote L2 com outro valor, o título antigo do mês deixa de vir.
   perform public.aplicar_mes_de_repasses('TESTE_R5', '1999-03', $j${
     "gravar": [{"codigo_local":"1","conta":"B","linha":"1","numero_repasse":"L2","data_repasse":"1999-03-20","data":"1999-01-06",
                 "nome_profissional_origem":"Dra. Teste","valor_repassado_medico":"12"}],
-    "sumiram": ["1:A:1"],
+    "sumiram": ["1:A:1:L1", "1:B:1:L1"],
     "titulos": [{"numero_repasse":"L2","nome_profissional_origem":"Dra. Teste","data_repasse":"1999-03-20","linhas":2,
                  "total_exato":"13","total_centavos":1300}]}$j$);
 
   select count(*) into n from public.repasses where empresa = 'TESTE_R5' and conta = 'B' and recebivel_id is not null;
-  if n <> 1 then falhas := falhas || ' RECEBIVEL_TARDIO_NAO_LIGOU'; end if;
+  if n <> 2 then falhas := falhas || ' RECEBIVEL_TARDIO_NAO_LIGOU'; end if;
   select count(*) into n from public.pendencias where empresa = 'TESTE_R5' and tipo = 'repasse_sem_procedimento' and estado = 'aberta';
   if n <> 0 then falhas := falhas || ' PENDENCIA_SEM_PROCEDIMENTO_NAO_FECHOU'; end if;
   select count(*) into n from public.repasses where empresa = 'TESTE_R5' and conta = 'A' and not visto_na_ultima_sync;
   if n <> 1 then falhas := falhas || ' ESTORNO_NAO_MARCADO'; end if;
-  select count(*) into n from public.pendencias where empresa = 'TESTE_R5' and tipo = 'repasse_sumiu' and referencia = '1:A:1';
+  select count(*) into n from public.pendencias where empresa = 'TESTE_R5' and tipo = 'repasse_sumiu' and referencia = '1:A:1:L1';
   if n <> 1 then falhas := falhas || ' PENDENCIA_SUMIU_ESPERADO_1_VEIO_' || n; end if;
   select count(*) into n from public.titulos_repasse where empresa = 'TESTE_R5' and numero_repasse = 'L1' and not ativo;
   if n <> 1 then falhas := falhas || ' TITULO_ANTIGO_NAO_INATIVADO'; end if;
   select count(*) into n from public.titulos_repasse where empresa = 'TESTE_R5' and numero_repasse = 'L2' and ativo and total_centavos = 1300;
   if n <> 1 then falhas := falhas || ' TITULO_NOVO_AUSENTE'; end if;
+
+  -- O mesmo procedimento A num lote de abril: os dois repasses ficam, cada um no seu mês, ligados ao mesmo recebível.
+  perform public.aplicar_mes_de_repasses('TESTE_R5', '1999-04', $j${
+    "gravar": [{"codigo_local":"1","conta":"A","linha":"1","numero_repasse":"L3","data_repasse":"1999-04-10","data":"1999-01-05",
+                "nome_profissional_origem":"Dra. Teste","valor_repassado_medico":"0"}],
+    "titulos": [{"numero_repasse":"L3","nome_profissional_origem":"Dra. Teste","data_repasse":"1999-04-10","linhas":1,
+                 "total_exato":"0","total_centavos":0}]}$j$);
+  select count(*) into n from public.repasses where empresa = 'TESTE_R5' and conta = 'A' and recebivel_id = rid;
+  if n <> 2 then falhas := falhas || ' MESMO_PROCEDIMENTO_EM_DOIS_LOTES_ESPERADO_2_VEIO_' || n; end if;
+  select count(*) into n from public.repasses where empresa = 'TESTE_R5' and conta = 'A' and mes = '1999-03' and numero_repasse = 'L1';
+  if n <> 1 then falhas := falhas || ' LOTE_DE_ABRIL_MOVEU_O_DE_MARCO'; end if;
 
   select count(*) into n from public.auditoria where acao = 'repasse_sincronizado' and detalhes ->> 'empresa' = 'TESTE_R5';
   if n < 1 then falhas := falhas || ' SEM_RESUMO_NA_AUDITORIA'; end if;

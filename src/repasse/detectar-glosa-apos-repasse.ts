@@ -11,7 +11,7 @@ export type GlosaAposRepasse = {
    * e uma ainda aberta não engole a seguinte.
    */
   referencia: string;
-  detalhes: RepasseFeito & { procedimento: string; glosa: Partial<Record<CampoDeGlosa, { antes: ValorExato | null; depois: ValorExato | null }>> };
+  detalhes: { procedimento: string; repasses: RepasseFeito[]; glosa: Partial<Record<CampoDeGlosa, { antes: ValorExato | null; depois: ValorExato | null }>> };
 };
 
 const CAMPOS_DE_GLOSA = ["valorGlosa", "totalGlosasMateriaisMedicamentos", "totalGlosasTaxasDiarias"] as const;
@@ -21,21 +21,22 @@ type CampoDeGlosa = (typeof CAMPOS_DE_GLOSA)[number];
 const valorCanonico = (v: ValorExato | null) => somarValores([v ?? "0"]);
 
 /**
- * Glosa nova ou alterada num procedimento que já tem repasse (L10, D-V). O Hub não desconta nada:
+ * Glosa nova ou alterada num procedimento que já tem repasse (L10, D-V). Um procedimento pode ter repasse em
+ * mais de um lote; a pendência traz todos. O Hub não desconta nada:
  * devolve a pendência com os valores para alguém decidir.
  */
 export function detectarGlosaAposRepasse(
   alterados: readonly { antes: RegistroDeProcedimento; depois: RegistroDeProcedimento }[],
-  repassados: ReadonlyMap<string, RepasseFeito>,
+  repassados: ReadonlyMap<string, readonly RepasseFeito[]>,
 ): GlosaAposRepasse[] {
   return alterados.flatMap(({ antes, depois }) => {
     const chave = chaveDoProcedimento(depois);
-    const repasse = repassados.get(chave);
-    if (!repasse) return [];
+    const repasses = repassados.get(chave);
+    if (!repasses?.length) return [];
     const mudaram = CAMPOS_DE_GLOSA.filter((c) => valorCanonico(antes[c]) !== valorCanonico(depois[c]));
     if (mudaram.length === 0) return [];
     const glosa = Object.fromEntries(mudaram.map((c) => [c, { antes: antes[c], depois: depois[c] }]));
     const valoresNovos = mudaram.map((c) => `${c}=${valorCanonico(depois[c])}`).join(";");
-    return [{ referencia: `${chave}|${valoresNovos}`, detalhes: { procedimento: chave, ...repasse, glosa } }];
+    return [{ referencia: `${chave}|${valoresNovos}`, detalhes: { procedimento: chave, repasses: [...repasses], glosa } }];
   });
 }
