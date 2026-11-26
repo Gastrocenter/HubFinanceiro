@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { exigirAcesso } from "@/lib/sessao";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
+import { lerTudo } from "@/lib/ler-tudo";
 import { revisarCadastro } from "./acoes";
 
 const TIPOS = [
@@ -34,15 +35,17 @@ async function Conteudo({ busca }: { busca: Promise<Filtros> }) {
   const tipo: Tipo = TIPOS.some((t) => t.valor === filtros.tipo) ? (filtros.tipo as Tipo) : "profissional";
   const soARevisar = filtros.filtro !== "todos";
 
-  let consulta = criarClienteAdmin()
-    .from("de_para")
-    .select("id, empresa, codigo_origem, nome_origem, ativo, visto_na_ultima_sync, revisado_em, profissionais(eh_medico)")
-    .eq("tipo", tipo)
-    .order("nome_origem");
-  if (soARevisar) consulta = consulta.is("revisado_em", null);
-  const { data, error } = await consulta.returns<Linha[]>();
-  if (error) throw new Error(error.message);
-  const linhas = data ?? [];
+  const db = criarClienteAdmin();
+  const linhas = await lerTudo<Linha>((de, ate) => {
+    let consulta = db
+      .from("de_para")
+      .select("id, empresa, codigo_origem, nome_origem, ativo, visto_na_ultima_sync, revisado_em, profissionais(eh_medico)")
+      .eq("tipo", tipo)
+      .order("nome_origem")
+      .order("id");
+    if (soARevisar) consulta = consulta.is("revisado_em", null);
+    return consulta.range(de, ate).returns<Linha[]>();
+  }, "ler cadastros");
 
   return (
     <main className="mx-auto max-w-4xl p-8">

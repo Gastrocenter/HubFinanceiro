@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const chavePublica = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-const TABELAS = ["perfis_usuarios", "auditoria", "sync_jobs", "prodoctor_payload_bruto", "unidades", "profissionais", "convenios", "de_para"] as const;
+const TABELAS = ["perfis_usuarios", "auditoria", "sync_jobs", "prodoctor_payload_bruto", "unidades", "profissionais", "convenios", "de_para", "recebiveis", "pendencias"] as const;
 /** Corpos com colunas reais: assim a recusa só pode ser de permissão, não de pedido malformado. */
 const CORPO_VALIDO: Record<(typeof TABELAS)[number], Record<string, unknown>> = {
   perfis_usuarios: { usuario_id: "00000000-0000-0000-0000-000000000000", perfil: "admin" },
@@ -14,6 +14,8 @@ const CORPO_VALIDO: Record<(typeof TABELAS)[number], Record<string, unknown>> = 
   profissionais: { nome: "x" },
   convenios: { nome: "x" },
   de_para: { empresa: "X", tipo: "unidade", codigo_origem: "1", nome_origem: "x", unidade_id: 1 },
+  recebiveis: { empresa: "X", codigo_local: "1", conta: "1", linha: "1", mes: "2026-10", data: "2026-10-01" },
+  pendencias: { tipo: "x", empresa: "X", referencia: "x", descricao: "x" },
 };
 
 /** Funções com argumentos reais, pelo mesmo motivo. */
@@ -22,6 +24,11 @@ const FUNCOES: Record<string, Record<string, unknown>> = {
   registrar_erro_job: { p_id: 1, p_mensagem: "x", p_definitivo: true },
   liberar_job: { p_id: 1 },
   aplicar_plano_de_cadastro: { p_empresa: "X", p_tipo: "unidade", p_plano: {} },
+  aplicar_mes_de_procedimentos: { p_empresa: "X", p_mes: "2026-10", p_diferenca: {} },
+  conferir_receita_do_job: { p_job_id: 1 },
+  resumo_receita: { p_mes: "2026-10" },
+  meses_com_receita: {},
+  expurgar_payload_de_exportacao: { p_dias: 120 },
   revisar_cadastro: { p_de_para_id: 1, p_usuario: "00000000-0000-0000-0000-000000000000", p_eh_medico: true },
 };
 

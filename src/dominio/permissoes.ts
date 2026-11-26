@@ -8,12 +8,13 @@ export type Acao =
   | "ver_folha_individual"
   | "gerenciar_usuarios"
   | "ver_auditoria"
-  | "revisar_cadastros";
+  | "revisar_cadastros"
+  | "ver_receita";
 
 const PERMISSOES: Record<Perfil, readonly Acao[]> = {
-  admin: ["acessar_painel", "gerenciar_usuarios", "ver_auditoria", "revisar_cadastros"],
-  financeiro: ["acessar_painel", "lancar_despesa", "pagar_despesa", "revisar_cadastros"],
-  aprovador: ["acessar_painel", "aprovar_despesa"],
+  admin: ["acessar_painel", "gerenciar_usuarios", "ver_auditoria", "revisar_cadastros", "ver_receita"],
+  financeiro: ["acessar_painel", "lancar_despesa", "pagar_despesa", "revisar_cadastros", "ver_receita"],
+  aprovador: ["acessar_painel", "aprovar_despesa", "ver_receita"],
   restrito: ["acessar_painel", "ver_folha_individual"],
 };
 

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { lerCadastros, type TipoDeCadastro } from "./ler-cadastros";
 import { reconciliar, type CadastroAtual } from "./reconciliar";
+import { lerTudo } from "@/lib/ler-tudo";
 
 export const ROTA_PARA_TIPO: Record<string, TipoDeCadastro> = {
   "/api/v1/LocaisProDoctor": "unidade",
@@ -20,21 +21,18 @@ export async function normalizarCadastrosDoJob(db: SupabaseClient, job: { id: st
   const tipo = ROTA_PARA_TIPO[job.rota];
   if (!tipo) throw new Error(`${job.rota} não é um cadastro.`);
 
-  const { data: paginas, error: erroPaginas } = await db
-    .from("prodoctor_payload_bruto")
-    .select("payload")
-    .eq("job_id", Number(job.id))
-    .order("pagina");
-  if (erroPaginas) throw new Error(`ler páginas do job ${job.id}: ${erroPaginas.message}`);
-  const vindos = (paginas ?? []).flatMap((p) => lerCadastros(job.rota, p.payload));
+  const paginas = await lerTudo(
+    (de, ate) => db.from("prodoctor_payload_bruto").select("payload").eq("job_id", Number(job.id)).order("pagina").range(de, ate),
+    `ler páginas do job ${job.id}`,
+  );
+  const vindos = paginas.flatMap((p) => lerCadastros(job.rota, p.payload));
 
-  const { data: linhas, error: erroAtuais } = await db
-    .from("de_para")
-    .select("codigo_origem, nome_origem, ativo, visto_na_ultima_sync")
-    .eq("empresa", job.empresa)
-    .eq("tipo", tipo);
-  if (erroAtuais) throw new Error(`ler de-para: ${erroAtuais.message}`);
-  const atuais: CadastroAtual[] = (linhas ?? []).map((l) => ({
+  const linhas = await lerTudo(
+    (de, ate) =>
+      db.from("de_para").select("codigo_origem, nome_origem, ativo, visto_na_ultima_sync").eq("empresa", job.empresa).eq("tipo", tipo).order("id").range(de, ate),
+    "ler de-para",
+  );
+  const atuais: CadastroAtual[] = linhas.map((l) => ({
     codigoOrigem: l.codigo_origem,
     nome: l.nome_origem,
     ativo: l.ativo,

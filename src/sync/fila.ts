@@ -3,6 +3,9 @@ import { criarClienteProDoctor } from "@/conectores/prodoctor/cliente";
 import { relogioReal, type Relogio } from "@/conectores/prodoctor/limitador";
 import type { Transporte } from "@/conectores/prodoctor/paginacao";
 import { ehJobDeCadastro, normalizarCadastrosDoJob } from "@/cadastros/normalizar";
+import { ROTA_PROCEDIMENTOS, normalizarProcedimentosDoJob } from "@/receita/normalizar";
+import { periodoDoMes } from "@/receita/planejar-exportacoes";
+import { lerTudo } from "@/lib/ler-tudo";
 import { executarJob, type ResultadoDoJob } from "./executar-job";
 import { criarRepositorioPostgres } from "./repositorio-postgres";
 
@@ -29,6 +32,34 @@ export async function enfileirarCadastros(db: SupabaseClient, empresas: string[]
     .upsert(linhas, { onConflict: "chave_idempotencia", ignoreDuplicates: true })
     .select("id");
   if (error) throw new Error(`enfileirar cadastros: ${error.message}`);
+  return data?.length ?? 0;
+}
+
+/**
+ * Cria um job de procedimentos por mês. Os filtros obrigatórios da API vêm dos códigos do de-para.
+ * `rotulo` vai na chave: "AAAA-MM-DD" (janela diária) ou "carga-inicial" — rodar de novo não duplica.
+ */
+export async function enfileirarProcedimentos(db: SupabaseClient, empresa: string, meses: string[], rotulo: string) {
+  const origens = await lerTudo(
+    (de, ate) => db.from("de_para").select("tipo, codigo_origem").eq("empresa", empresa).order("id").range(de, ate),
+    `ler de-para de ${empresa}`,
+  );
+  const codigos = (tipo: string) => origens.filter((o) => o.tipo === tipo).map((o) => ({ codigo: Number(o.codigo_origem) }));
+  const filtros = { locaisProDoctor: codigos("unidade"), convenios: codigos("convenio"), usuarios: codigos("profissional") };
+  if (Object.values(filtros).some((lista) => lista.length === 0)) {
+    // Sem cadastro normalizado ainda: a exportação seria recusada pela API. Tenta no próximo dia.
+    return 0;
+  }
+
+  const linhas = meses.map((mes) => ({
+    empresa,
+    rota: ROTA_PROCEDIMENTOS,
+    caminho_da_lista: "exportacao.registros",
+    corpo: { periodo: periodoDoMes(mes), ...filtros },
+    chave_idempotencia: `procedimentos:${empresa}:${mes}:${rotulo}`,
+  }));
+  const { data, error } = await db.from("sync_jobs").upsert(linhas, { onConflict: "chave_idempotencia", ignoreDuplicates: true }).select("id");
+  if (error) throw new Error(`enfileirar procedimentos: ${error.message}`);
   return data?.length ?? 0;
 }
 
@@ -76,9 +107,10 @@ export async function processarFila({
     if (resultado === "pausado") await repositorio.liberar(job.id);
 
     // Cadastro concluído vira de-para na mesma rodada (D-M). Se falhar, o job fica com o erro visível (F7).
-    if (resultado === "concluido" && ehJobDeCadastro(job.rota)) {
+    if (resultado === "concluido" && (ehJobDeCadastro(job.rota) || job.rota === ROTA_PROCEDIMENTOS)) {
       try {
-        await normalizarCadastrosDoJob(db, job);
+        if (job.rota === ROTA_PROCEDIMENTOS) await normalizarProcedimentosDoJob(db, job);
+        else await normalizarCadastrosDoJob(db, job);
       } catch (erro) {
         await repositorio.registrarErro(job.id, `normalização: ${(erro as Error).message}`, true);
         resultado = "falhou";
