@@ -1,0 +1,1 @@
+drop table if exists public.rateios, public.lancamentos, public.repasses, public.procedimentos, public.contas_pacientes, public.faturas, public.integracao_execucoes, public.categoria_dre, public.medicos, public.convenios, public.usuarios, public.unidades;

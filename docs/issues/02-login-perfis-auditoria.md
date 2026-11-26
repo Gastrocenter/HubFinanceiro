@@ -19,6 +19,6 @@ Requisitos RN-06, RN-07, RN-11 e [ADR-0002](../adr/0002-acesso-so-pelo-servidor-
 - [x] Login e troca de perfil geram entradas no log (`login`, `login_falhou`, `logout`, `perfil_concedido`). Confirmado em produção em 25/11/2026.
 
 ## Estado (25/11/2026)
-Feito: regras de permissão (S1) e de acesso (S2), migration `20261125170000_perfis_e_auditoria.sql` (tabelas `perfis_usuarios` e `auditoria`, RLS forçado, sem policy), auditoria append-only por trigger (S3), isolamento do navegador (S4), tela de login, sessão no servidor, guard de rotas e página de auditoria do admin. Primeiro admin (`yurigermano11@gmail.com`) com perfil `admin`, registrado na auditoria.
+Feito: regras de permissão (S1) e de acesso (S2), migration `20261125200358_perfis_e_auditoria.sql` (tabelas `perfis_usuarios` e `auditoria`, RLS forçado, sem policy), auditoria append-only por trigger (S3), isolamento do navegador (S4), tela de login, sessão no servidor, guard de rotas e página de auditoria do admin. Primeiro admin (`yurigermano11@gmail.com`) com perfil `admin`, registrado na auditoria.
 
 **Fechada em 25/11/2026.** Login real testado em produção; auditoria registrou `login_falhou` e `login`.

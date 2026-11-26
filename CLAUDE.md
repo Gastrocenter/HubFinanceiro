@@ -8,6 +8,7 @@ TypeScript, Next.js (App Router), Drizzle, Supabase (Postgres e Auth), Vercel, V
 ## Regras
 - Nunca versionar nem imprimir `.env` ou `dados_brutos/` (dados de pacientes, LGPD). Testes usam fixtures anonimizadas.
 - O navegador nunca acessa o banco direto. Regras de negócio ficam em módulos puros e testados (ver ADR-0002).
+- Migration: escreva o arquivo em `supabase/migrations/` e aplique exatamente esse conteúdo. O nome do arquivo usa a versão que o banco gravou (`list_migrations`); renomeie logo após aplicar.
 - Toda tabela nova nasce com RLS ligado e sem policy para `anon`/`authenticated` (acesso só pelo servidor). Rodar o advisor de segurança do Supabase depois de cada migration.
 - Toda integração é idempotente e guarda o payload bruto antes de normalizar.
 - O Hub nunca sobrescreve dado do ProDoctor: divergência vira pendência.
