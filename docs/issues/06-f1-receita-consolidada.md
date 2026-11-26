@@ -22,4 +22,8 @@ Feito: parser sem dados de paciente (S1, com mutação provando o teste), casame
 
 Bugs pegos no caminho: leitura cortada em 1.000 linhas pelo PostgREST (corrigido com `lerTudo`) e perda de precisão ao ler `numeric` como número JSON (corrigido lendo como texto).
 
-Falta: deploy, carga dos outros 11 meses em produção e verificação da tela por você.
+Carga inicial em produção (26/11/2026): 12 meses, dez/2025 a nov/2026, 32.185 recebíveis, todos conferidos em linhas e em reais contra o bruto, todos vinculados a médico, convênio e unidade, sem pendências.
+
+Correção feita durante a carga: a normalização passou a rodar antes de o job ser marcado como concluído (`aoConcluir`). No código antigo havia uma janela em que o job aparecia "concluído" sem receita ainda.
+
+Falta: verificação da tela `/receita` por você.
