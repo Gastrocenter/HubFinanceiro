@@ -1,6 +1,9 @@
 import { Suspense } from "react";
 import { exigirAcesso } from "@/lib/sessao";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
+import { EsqueletoDeTela } from "@/components/esqueleto-de-tela";
+import { Vazio } from "@/components/vazio";
+import { TabelaDeAuditoria } from "./tabela-de-auditoria";
 
 async function Conteudo() {
   await exigirAcesso("ver_auditoria");
@@ -12,36 +15,30 @@ async function Conteudo() {
   if (error) throw new Error(error.message);
 
   return (
-    <main className="mx-auto max-w-4xl p-8">
+    <div className="mx-auto max-w-4xl p-8">
       <h1 className="text-2xl font-semibold">Log de auditoria</h1>
-      <p className="mt-1 text-sm text-neutral-600">Últimos 100 eventos. O log só aceita inserção.</p>
-      <table className="mt-6 w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-neutral-300">
-            <th className="py-2 pr-4">Quando</th>
-            <th className="pr-4">Ação</th>
-            <th className="pr-4">Usuário</th>
-            <th>Detalhes</th>
-          </tr>
-        </thead>
-        <tbody>
-          {(data ?? []).map((e) => (
-            <tr key={e.id} className="border-b border-neutral-200 align-top">
-              <td className="py-2 pr-4 whitespace-nowrap">{new Date(e.ocorrido_em).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</td>
-              <td className="pr-4">{e.acao}</td>
-              <td className="pr-4 font-mono text-xs">{e.usuario_id?.slice(0, 8) ?? "—"}</td>
-              <td className="font-mono text-xs">{JSON.stringify(e.detalhes)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </main>
+      <p className="mt-1 text-sm text-muted-foreground">Últimos 100 eventos. O log só aceita inserção.</p>
+      {(data ?? []).length === 0 ? (
+        <Vazio titulo="Nenhum evento registrado" descricao="Login, revisão de cadastro e resolução de pendência ficam registrados aqui." />
+      ) : (
+      <TabelaDeAuditoria
+        eventos={(data ?? []).map((e) => ({
+          id: e.id,
+          quando: e.ocorrido_em,
+          quandoTexto: new Date(e.ocorrido_em).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
+          acao: e.acao,
+          usuario: e.usuario_id?.slice(0, 8) ?? "—",
+          detalhes: JSON.stringify(e.detalhes),
+        }))}
+      />
+      )}
+    </div>
   );
 }
 
 export default function Auditoria() {
   return (
-    <Suspense fallback={<p className="p-8">Carregando…</p>}>
+    <Suspense fallback={<EsqueletoDeTela filtros={false} largura="max-w-4xl" />}>
       <Conteudo />
     </Suspense>
   );
