@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { estaAtivo, menuPara, trilhaDe } from "./menu";
+import { buscaPara, estaAtivo, menuPara, trilhaDe } from "./menu";
 
 const hrefs = (perfis: Parameters<typeof menuPara>[0]) => menuPara(perfis).flatMap((s) => s.itens.map((i) => i.href));
 
@@ -24,6 +24,29 @@ describe("menuPara", () => {
 
   it("sem perfil, nenhum item", () => {
     expect(menuPara([])).toEqual([]);
+  });
+});
+
+describe("buscaPara", () => {
+  const destinos = (perfis: Parameters<typeof buscaPara>[0]) => buscaPara(perfis).flatMap((g) => g.destinos.map((d) => d.href));
+
+  it("tem as mesmas telas do menu, na mesma ordem, mais os atalhos permitidos", () => {
+    const grupos = buscaPara(["admin"]);
+    expect(grupos.map((g) => g.titulo)).toEqual(["Geral", "Financeiro", "Controle", "Atalhos"]);
+    expect(grupos.slice(0, 3).flatMap((g) => g.destinos.map((d) => d.href))).toEqual(hrefs(["admin"]));
+  });
+
+  it("atalho de cadastro só aparece para quem revisa cadastros", () => {
+    expect(destinos(["aprovador"])).toContain("/conferencia?estado=resolvida");
+    expect(destinos(["aprovador"]).some((h) => h.startsWith("/cadastros"))).toBe(false);
+  });
+
+  it("sem atalho permitido, não há grupo de atalhos", () => {
+    expect(buscaPara(["restrito"]).map((g) => g.titulo)).toEqual(["Geral"]);
+  });
+
+  it("toda tela tem palavras extras para a busca", () => {
+    for (const d of buscaPara(["admin"]).flatMap((g) => g.destinos)) expect(d.palavras.length).toBeGreaterThan(0);
   });
 });
 

@@ -32,6 +32,39 @@ export function menuPara(perfis: readonly Perfil[]): SecaoDoMenu[] {
   );
 }
 
+/** Um destino da busca rápida (⌘K): telas do menu e atalhos para filtros que já existem na URL. */
+export type DestinoDaBusca = { rotulo: string; href: string; palavras: string[] };
+export type GrupoDaBusca = { titulo: string; destinos: DestinoDaBusca[] };
+
+/** Outras palavras para achar cada tela: o que a pessoa digita nem sempre é o nome do menu. */
+const PALAVRAS: Record<string, string[]> = {
+  "/painel": ["início", "resumo", "indicadores"],
+  "/receita": ["faturamento", "procedimentos", "glosa", "competência", "bruto", "líquido"],
+  "/repasses": ["profissional", "médico", "pagamento", "lote"],
+  "/contas": ["pagar", "receber", "títulos", "vencimento"],
+  "/conferencia": ["pendências", "sincronização", "integridade", "divergência", "prodoctor"],
+  "/cadastros": ["profissionais", "convênios", "unidades", "de-para", "revisão"],
+  "/admin/auditoria": ["log", "histórico", "quem fez"],
+};
+
+/** Atalhos para filtros das telas; cada um exige a mesma permissão da tela de destino. */
+const ATALHOS: readonly (DestinoDaBusca & { acao: Acao })[] = [
+  { rotulo: "Pendências resolvidas", href: "/conferencia?estado=resolvida", acao: "ver_conferencia", palavras: ["histórico", "justificativa"] },
+  { rotulo: "Profissionais a revisar", href: "/cadastros?tipo=profissional&filtro=a-revisar", acao: "revisar_cadastros", palavras: ["médico", "sugestão"] },
+  { rotulo: "Convênios", href: "/cadastros?tipo=convenio&filtro=todos", acao: "revisar_cadastros", palavras: ["plano", "operadora"] },
+  { rotulo: "Unidades", href: "/cadastros?tipo=unidade&filtro=todos", acao: "revisar_cadastros", palavras: ["local", "clínica"] },
+];
+
+/** O que a busca rápida oferece a quem tem estes perfis: as telas do menu, por seção, e os atalhos permitidos. */
+export function buscaPara(perfis: readonly Perfil[]): GrupoDaBusca[] {
+  const telas = menuPara(perfis).map((s) => ({
+    titulo: s.titulo,
+    destinos: s.itens.map((i) => ({ rotulo: i.rotulo, href: i.href, palavras: PALAVRAS[i.href] ?? [] })),
+  }));
+  const atalhos = ATALHOS.filter((a) => temPermissao(perfis, a.acao)).map(({ rotulo, href, palavras }) => ({ rotulo, href, palavras }));
+  return atalhos.length > 0 ? [...telas, { titulo: "Atalhos", destinos: atalhos }] : telas;
+}
+
 /** A rota é a do item ou está abaixo dela (`/conferencias` não está abaixo de `/conferencia`). */
 export function estaAtivo(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);

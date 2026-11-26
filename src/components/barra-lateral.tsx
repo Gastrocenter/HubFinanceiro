@@ -2,18 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  ChevronsUpDown,
-  ClipboardCheck,
-  HandCoins,
-  LayoutDashboard,
-  LogOut,
-  ScrollText,
-  TrendingUp,
-  Users,
-  Wallet,
-  type LucideIcon,
-} from "lucide-react";
+import { ChevronsUpDown, LayoutDashboard, LogOut } from "lucide-react";
+import { iconeDe } from "@/components/icones-do-menu";
 import { sair } from "@/app/login/acoes";
 import { estaAtivo, type SecaoDoMenu } from "@/dominio/menu";
 import type { Perfil } from "@/dominio/permissoes";
@@ -39,16 +29,6 @@ import {
   SidebarMenuSkeleton,
   SidebarRail,
 } from "@/components/ui/sidebar";
-
-const ICONES: Record<string, LucideIcon> = {
-  "/painel": LayoutDashboard,
-  "/receita": TrendingUp,
-  "/repasses": HandCoins,
-  "/contas": Wallet,
-  "/conferencia": ClipboardCheck,
-  "/cadastros": Users,
-  "/admin/auditoria": ScrollText,
-};
 
 const ROTULO_DO_PERFIL: Record<Perfil, string> = {
   admin: "Administrador",
@@ -100,7 +80,7 @@ export function BarraLateral({
             <SidebarGroupLabel>{secao.titulo}</SidebarGroupLabel>
             <SidebarMenu>
               {secao.itens.map((item) => {
-                const Icone = ICONES[item.href] ?? LayoutDashboard;
+                const Icone = iconeDe(item.href) ?? LayoutDashboard;
                 const ativo = estaAtivo(pathname, item.href);
                 return (
                   <SidebarMenuItem key={item.href}>

@@ -5,7 +5,8 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { menuPara } from "@/dominio/menu";
+import { BuscaRapida } from "@/components/busca-rapida";
+import { buscaPara, menuPara } from "@/dominio/menu";
 import { carregarSessao } from "@/lib/sessao";
 
 /** Lê a sessão (a mesma leitura da página, por `cache`) só para montar o menu; o acesso continua na página. */
@@ -17,6 +18,12 @@ async function BarraComSessao() {
       usuario={sessao ? { email: sessao.email, perfis: sessao.perfis } : null}
     />
   );
+}
+
+/** A busca rápida só oferece o que o perfil pode abrir; sem sessão, não aparece. */
+async function BuscaComSessao() {
+  const sessao = await carregarSessao();
+  return sessao ? <BuscaRapida grupos={buscaPara(sessao.perfis)} /> : null;
 }
 
 export default function HubLayout({ children }: { children: React.ReactNode }) {
@@ -32,6 +39,9 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
             <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
             <Suspense>
               <Trilha />
+            </Suspense>
+            <Suspense>
+              <BuscaComSessao />
             </Suspense>
           </header>
           {children}
