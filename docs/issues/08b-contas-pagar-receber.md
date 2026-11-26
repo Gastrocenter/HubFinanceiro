@@ -39,9 +39,11 @@ Ensaio sem banco com out/2026: 17 páginas, 1.610 contas, todas do mês de inclu
 Revisão de código (corrigido): D-1 à prova de falha (acima); natureza (pagar ou receber) pela situação, não pelo sinal do valor; totais da tela somados no banco (`totais_contas`, ADR-0004); lista de contas a pagar lida página a página; conferência também compara os valores efetivados (o que muda quando a conta é paga, D-3) e acusa conta de outro mês de inclusão no bruto.
 Dívida registrada (não corrigida): o mapeamento rota → nome/normalizador/tipo está em quatro lugares (status das sincronizações, conferência, fila, contas); a leitura das páginas do job e `mesDoCorpo` se repetem entre receita, repasse e contas.
 
-Falta, depois do deploy: carga de 12 meses (S6) com `RODAR_SYNC_REAL=1 MESES_CARGA=2025-12,...,2026-11 ROTULO_CARGA=carga-inicial npm run test:integracao -- carga-contas-real` (sincroniza o plano financeiro antes) e teste da tela em produção (S7). No primeiro dia o agendamento não cria job de contas (o plano ainda está vazio); a carga resolve.
+Carga de 12 meses (S6) em 26/11/2026, rótulo `carga-inicial`: o plano financeiro primeiro (408 itens), depois as contas. Os 12 meses (dez/2025 a nov/2026) batem com o bruto em linhas, crédito, débito e efetivado, sem conta de outro mês de inclusão, e a segunda normalização não muda nada. No Hub: 13.659 contas, nenhuma fora da lista de tipos com nome guardando nome, histórico ou documento, nenhuma pendência `conta_sumiu`. Integridade do painel: 36 de 36 meses (receita, repasse e contas). Com o plano gravado, o agendamento das 05:00 passa a criar os jobs de contas.
+
+Falta o teste da tela em produção (S7).
 
 ## Critérios de aceite
-- [ ] Contas a pagar e a receber de um mês batem com o ProDoctor por caminho independente.
-- [ ] Nenhum dado de paciente gravado (teste de vazamento).
+- [x] Contas a pagar e a receber de um mês batem com o ProDoctor por caminho independente.
+- [x] Nenhum dado de paciente gravado (teste de vazamento).
 - [ ] Tela só de leitura testada em produção.
