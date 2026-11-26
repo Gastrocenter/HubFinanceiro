@@ -2,15 +2,15 @@ import { handleSchedule } from "@vercel/schedules";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
 import { mesesAteHoje } from "@/receita/planejar-exportacoes";
 import { empresasConfiguradas } from "@/sync/empresas";
-import { enfileirarCadastros, enfileirarProcedimentos } from "@/sync/fila";
+import { enfileirarCadastros, enfileirarProcedimentos, enfileirarRepasses } from "@/sync/fila";
 import { executarRotinaDiaria } from "@/sync/rotina-diaria";
 
 // Agendamento privado (schedule/v1beta): sem URL pública, só o agendador da Vercel chama.
 // O nome "enfileirar-cadastros" ficou por histórico (renomear apaga o histórico do agendamento):
-// hoje ele enfileira cadastros + janela de procedimentos e roda o expurgo LGPD (ADR-0005).
+// hoje ele enfileira cadastros + janela de procedimentos e de repasses e roda o expurgo LGPD (ADR-0005).
 export const maxDuration = 60;
 
-/** Meses da janela diária de procedimentos (D-P): o atual e os 2 anteriores (~90 dias, L2). */
+/** Meses da janela diária de procedimentos (D-P) e de repasses (D-X): o atual e os 2 anteriores (~90 dias, L2). */
 const MESES_NA_JANELA = 3;
 
 /** Dia da execução no horário de São Paulo: a mesma ocorrência entregue duas vezes gera a mesma chave. */
@@ -28,10 +28,14 @@ export const POST = handleSchedule(async (meta) => {
       // Cadastros primeiro: a fila processa em ordem de criação, e a receita usa o de-para.
       const cadastros = await enfileirarCadastros(db, empresas, dia);
       let procedimentos = 0;
+      let repasses = 0;
       for (const empresa of empresas) {
-        procedimentos += await enfileirarProcedimentos(db, empresa, mesesAteHoje(dia, MESES_NA_JANELA), dia);
+        const janela = mesesAteHoje(dia, MESES_NA_JANELA);
+        procedimentos += await enfileirarProcedimentos(db, empresa, janela, dia);
+        // Depois dos procedimentos: o repasse se liga ao recebível do mesmo procedimento.
+        repasses += await enfileirarRepasses(db, empresa, janela, dia);
       }
-      return { cadastros, procedimentos };
+      return { cadastros, procedimentos, repasses };
     },
     // Roda mesmo se enfileirar falhar (ADR-0005: nada de paciente além de 120 dias).
     expurgar: async () => {

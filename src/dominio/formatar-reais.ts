@@ -13,9 +13,14 @@ export function arredondarParaCentavos(valor: ValorExato): bigint {
 /** "566865.90" → "R$ 566.865,90". Sem ponto flutuante em nenhum passo. */
 export function formatarReais(valor: ValorExato | null): string {
   if (valor === null) return "—";
-  const centavos = arredondarParaCentavos(valor);
-  const negativo = centavos < 0n;
-  const absoluto = negativo ? -centavos : centavos;
+  return formatarCentavos(arredondarParaCentavos(valor));
+}
+
+/** Centavos inteiros (bigint ou texto, como o banco devolve) → "R$ 176,49". Não arredonda: já são centavos. */
+export function formatarCentavos(centavos: bigint | string): string {
+  const total = BigInt(centavos);
+  const negativo = total < 0n;
+  const absoluto = negativo ? -total : total;
   const reais = (absoluto / 100n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   const resto = (absoluto % 100n).toString().padStart(2, "0");
   return `${negativo ? "-" : ""}R$ ${reais},${resto}`;

@@ -46,6 +46,24 @@ RN-02, RN-03, L10. O repasse vai ao **profissional**, médico ou não (GLOSSARY:
 - Enfileirar carga **só depois** do deploy do código que normaliza.
 - Antes de push, listar **todos** os commits que vão subir (`git log origin/main..HEAD`).
 
+## Estado (26/11/2026)
+Feito: parser sem dados de paciente (S1, mutação provando o teste), diferença do mês de repasse (S2, reusa `diferencaPorChave`, agora comum à receita), títulos por (profissional, lote) com arredondamento só no total (S3), glosa após repasse (S4, detectada na sync de procedimentos; cada mudança de glosa é uma pendência), banco (S5: `repasses`, `titulos_repasse`, `aplicar_mes_de_repasses`, testes SQL `aplicar_mes_de_repasses` e `resumo_repasses` com TESTE_OK, isolamento do navegador estendido), tela `/repasses` (S7) e o job no agendamento das 05:00 (janela de 3 meses, depois dos procedimentos).
+
+Ensaio sem banco com o arquivo de out/2026: 1.493 linhas, 394 títulos, total exato R$ 329.902,8676 (igual ao cálculo independente em Python). A soma dos títulos arredondados dá R$ 329.902,90, 3 centavos acima porque cada título arredonda uma vez (D-T).
+
+Decisões tomadas na implementação:
+- Chave do repasse = a do recebível `(empresa, codigo_local, conta, linha)`; `recebivel_id` único liga os dois sentidos. O vínculo é refeito a cada sync de repasses, então um procedimento que chega depois se liga no dia seguinte.
+- Repasse que some do mês vira `repasse_sumiu` (fecha sozinha se ele voltar); título do lote que sumiu fica `ativo = false`, nunca é apagado.
+- Lote com duas `dataRepasse`, ou linha sem `valorRepassadoMedico`, faz o job do mês falhar de forma visível (fato levantado: um lote tem uma data só).
+
+Falta (depois do deploy): carga real de 12 meses com `RODAR_SYNC_REAL=1 MESES_CARGA=2025-12,...,2026-11 ROTULO_CARGA=carga-inicial npm run test:integracao -- carga-repasse-real` (S6) e teste da tela em produção (S7).
+
+Para a issue 09 (perguntar à Sabrina):
+- `nao_incluir_repasse`: "a repassar" só tira os marcados `nao_repassar`.
+- Glosa em procedimento mais antigo que a janela de 3 meses não é detectada (só a sync de procedimentos vê glosa).
+- Procedimento que some depois de repassado gera só `procedimento_sumiu`, sem o contexto do repasse.
+- As telas de receita e repasse somam todas as empresas (hoje só há uma).
+
 ## Critérios de aceite
 - [ ] Repasse e recebível ficam vinculados nos dois sentidos (rastreabilidade).
 - [ ] Glosa posterior em procedimento repassado gera pendência (D-V).

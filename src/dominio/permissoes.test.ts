@@ -18,6 +18,11 @@ describe("temPermissao", () => {
     expect(temPermissao(["restrito"], "ver_receita")).toBe(false);
   });
 
+  it("admin, financeiro e aprovador veem os repasses; restrito não", () => {
+    for (const perfil of ["admin", "financeiro", "aprovador"] as const) expect(temPermissao([perfil], "ver_repasse"), perfil).toBe(true);
+    expect(temPermissao(["restrito"], "ver_repasse")).toBe(false);
+  });
+
   it("admin e financeiro revisam cadastros e de-para; aprovador e restrito não", () => {
     expect(temPermissao(["admin"], "revisar_cadastros")).toBe(true);
     expect(temPermissao(["financeiro"], "revisar_cadastros")).toBe(true);

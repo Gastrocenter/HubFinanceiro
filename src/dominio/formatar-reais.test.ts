@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatarReais } from "./formatar-reais";
+import { formatarCentavos, formatarReais } from "./formatar-reais";
 
 describe("formatarReais", () => {
   it("formata no padrão brasileiro com milhar e centavos", () => {
@@ -19,5 +19,13 @@ describe("formatarReais", () => {
 
   it("valor não informado aparece como traço", () => {
     expect(formatarReais(null)).toBe("—");
+  });
+});
+
+describe("formatarCentavos", () => {
+  it("formata centavos inteiros (total de títulos já arredondados) sem arredondar de novo", () => {
+    expect(formatarCentavos("17649")).toBe("R$ 176,49");
+    expect(formatarCentavos("5")).toBe("R$ 0,05");
+    expect(formatarCentavos("-123456789")).toBe("-R$ 1.234.567,89");
   });
 });

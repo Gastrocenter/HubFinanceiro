@@ -1,8 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { chaveDoProcedimento, diferencaDoMes, type ProcedimentoAtual } from "./diferenca-do-mes";
 import { lerProcedimentos, type RegistroDeProcedimento } from "./ler-procedimentos";
-import { planejarGravacao, type Vinculos } from "./planejar-gravacao";
-import { resolverPorNome } from "./resolver-por-nome";
+import { planejarGravacao } from "./planejar-gravacao";
+import { criarVinculador, lerOrigens } from "@/sync/vinculador";
+import { glosasAposRepasse } from "@/repasse/glosas-apos-repasse";
 import { lerTudo } from "@/lib/ler-tudo";
 
 export const ROTA_PROCEDIMENTOS = "/api/v1/Exportacoes/ProcedimentosContasPacientes";
@@ -14,8 +15,6 @@ export function mesDoCorpo(corpo: Record<string, unknown>): string {
   if (!m) throw new Error(`Job de procedimentos sem período válido: "${inicial}".`);
   return `${m[2]}-${m[1]}`;
 }
-
-type Origem = { codigo_origem: string; nome_origem: string; unidade_id: number | null; profissional_id: number | null; convenio_id: number | null };
 
 const CAMPOS_DO_BANCO: Record<keyof RegistroDeProcedimento, string> = {
   codigoLocal: "codigo_local", conta: "conta", linha: "linha", fatura: "fatura", data: "data",
@@ -88,55 +87,11 @@ export async function normalizarProcedimentosDoJob(
 
   const dif = diferencaDoMes(atuais, vindos);
 
-  const origens = await lerTudo(
-    (de, ate) =>
-      db.from("de_para").select("tipo, codigo_origem, nome_origem, unidade_id, profissional_id, convenio_id").eq("empresa", job.empresa).order("id").range(de, ate),
-    "ler de-para",
-  );
-  const doTipo = (tipo: string) => origens.filter((o) => o.tipo === tipo) as (Origem & { tipo: string })[];
-  const profissionais = doTipo("profissional").map((o) => ({ id: o.profissional_id!, nome: o.nome_origem }));
-  const convenios = doTipo("convenio").map((o) => ({ id: o.convenio_id!, nome: o.nome_origem }));
-  const unidades = new Map(doTipo("unidade").map((o) => [o.codigo_origem, o.unidade_id!]));
-
-  const pendencias = new Map<string, { tipo: string; referencia: string; descricao: string; detalhes: Record<string, unknown> }>();
-  /** Pendências de vínculo que agora casaram: fecham na mesma transação (code-review item 2). */
-  const resolver = new Map<string, { tipo: string; referencia: string }>();
-  function marcarResolvido(qual: string, referencia: string) {
-    for (const tipo of [`${qual}_sem_par`, `${qual}_ambiguo`]) resolver.set(`${tipo}:${referencia}`, { tipo, referencia });
-  }
-  function vincularPorNome(nome: string, cadastros: { id: number; nome: string }[], qual: "profissional" | "convenio"): number | null {
-    const r = resolverPorNome(nome, cadastros);
-    if (r.tipo === "casou") {
-      marcarResolvido(qual, nome);
-      return r.id;
-    }
-    const tipo = r.tipo === "ambiguo" ? `${qual}_ambiguo` : `${qual}_sem_par`;
-    pendencias.set(`${tipo}:${nome}`, {
-      tipo,
-      referencia: nome,
-      descricao: r.tipo === "ambiguo" ? `Nome de ${qual} casa com mais de um cadastro` : `Nome de ${qual} sem cadastro no de-para`,
-      detalhes: { mes, ...(r.tipo === "ambiguo" ? { candidatos: r.ids } : {}) },
-    });
-    return null;
-  }
-  function vincular(r: RegistroDeProcedimento): Vinculos {
-    const unidade = unidades.get(r.codigoLocal) ?? null;
-    if (unidade === null) {
-      pendencias.set(`unidade_sem_par:${r.codigoLocal}`, {
-        tipo: "unidade_sem_par", referencia: r.codigoLocal, descricao: "Código de unidade sem de-para", detalhes: { mes },
-      });
-    } else {
-      marcarResolvido("unidade", r.codigoLocal);
-    }
-    return {
-      unidade_id: unidade,
-      profissional_id: vincularPorNome(r.nomeProfissional, profissionais, "profissional"),
-      convenio_id: vincularPorNome(r.nomeConvenio, convenios, "convenio"),
-    };
-  }
+  const vinculador = criarVinculador(await lerOrigens(db, job.empresa), mes);
+  const glosas = await glosasAposRepasse(db, job.empresa, dif, atuais);
 
   // Regrava o que mudou no ProDoctor e também o que só mudou de vínculo (ex.: cadastro que passou a existir).
-  const gravar = planejarGravacao({ vindos, diferenca: dif, vinculosAtuais, vincular }).map(({ registro, vinculos }) => ({
+  const gravar = planejarGravacao({ vindos, diferenca: dif, vinculosAtuais, vincular: vinculador.vincular }).map(({ registro, vinculos }) => ({
     ...paraBanco(registro),
     ...vinculos,
   }));
@@ -149,8 +104,8 @@ export async function normalizarProcedimentosDoJob(
       gravar,
       sumiram: dif.sumiram,
       voltaram: dif.voltaram,
-      pendencias: [...pendencias.values()],
-      resolver: [...resolver.values()],
+      pendencias: [...vinculador.pendencias(), ...glosas.map((g) => ({ tipo: "glosa_apos_repasse", descricao: "Glosa nova ou alterada em procedimento já repassado", ...g }))],
+      resolver: vinculador.resolver(),
     },
   });
   if (e4) throw new Error(`aplicar mês ${mes}: ${e4.message}`);
@@ -164,6 +119,8 @@ export async function normalizarProcedimentosDoJob(
     religados,
     sumiram: dif.sumiram.length,
     voltaram: dif.voltaram.length,
-    pendencias: pendencias.size,
+    pendencias: vinculador.pendencias().length,
+    glosasAposRepasse: glosas.length,
   };
 }
+

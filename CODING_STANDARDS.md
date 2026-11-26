@@ -12,6 +12,7 @@ Lido na revisão (`/code-review`). Cada regra é um julgamento que nenhum linter
 
 **Coluna `numeric` volta do banco como texto (`coluna:coluna::text`) e soma no Postgres.** Como número JSON, o JavaScript perde casas além de ~15 dígitos: todo dia pareceria "alterado" e somas divergem (ADR-0004).
 - Certo: `SELECT_RECEBIVEIS` em `src/receita/normalizar.ts`; totais por `resumo_receita` (SQL); exibição por `formatarReais`.
+- Exceção: o total de um título é somado no TypeScript, por `somarValores` (`src/dominio/valor.ts`, BigInt exato), porque o arredondamento do título é regra pura e testada (`montarTitulos`, issue 07). Nenhuma outra soma de dinheiro em TS.
 - **Arredondar para centavos só em `arredondarParaCentavos`** (`src/dominio/formatar-reais.ts`), meio para cima, e só no total que vira título ou tela — nunca linha a linha.
 - Sinal na revisão: `Number(...)`, `parseFloat`, `+` ou `toFixed` sobre valor de dinheiro; `numeric` selecionado sem `::text`.
 
