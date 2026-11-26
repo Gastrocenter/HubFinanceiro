@@ -3,6 +3,7 @@ import { BarraLateral, BarraLateralCarregando } from "@/components/barra-lateral
 import { Trilha } from "@/components/trilha";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { menuPara } from "@/dominio/menu";
 import { carregarSessao } from "@/lib/sessao";
@@ -36,6 +37,7 @@ export default function HubLayout({ children }: { children: React.ReactNode }) {
           {children}
         </SidebarInset>
       </SidebarProvider>
+      <Toaster position="bottom-right" />
     </TooltipProvider>
   );
 }

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from "next/link";
 import { classificarPendencia, type Categoria } from "@/conferencia/classificar-pendencia";
 import { ROTAS_DO_AGENDAMENTO, statusDasSincronizacoes, type JobDaFila } from "@/conferencia/status-das-sincronizacoes";
@@ -11,7 +12,12 @@ import { criarClienteAdmin } from "@/lib/supabase/admin";
 import { ROTA_REPASSES } from "@/repasse/normalizar";
 import { ROTA_CONTAS } from "@/contas/normalizar";
 import { empresasConfiguradas } from "@/sync/empresas";
-import { resolverPendencia } from "./acoes";
+import { TabelaDePendencias } from "./tabela-de-pendencias";
+import { CircleCheck, TriangleAlert } from "lucide-react";
+import { EsqueletoDeTela } from "@/components/esqueleto-de-tela";
+import { Status } from "@/components/status";
+import { Vazio } from "@/components/vazio";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type Integridade = {
   empresa: string;
@@ -124,12 +130,14 @@ async function Conteudo({ busca }: { busca: Promise<{ categoria?: string; estado
   };
 
   return (
-    <main className="mx-auto max-w-6xl p-8">
-      <Link href="/painel" className="text-sm underline">← Painel</Link>
-      <h1 className="mt-2 text-2xl font-semibold">Conferência</h1>
+    <div className="mx-auto max-w-6xl p-8">
+      <h1 className="text-2xl font-semibold">Conferência</h1>
 
       {(paradas.length > 0 || naoBatem.length > 0) && (
-        <div role="alert" className="mt-4 rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900">
+        <Alert variant="destructive" className="mt-4">
+          <TriangleAlert />
+          <AlertTitle>Os dados do Hub podem estar incompletos</AlertTitle>
+          <AlertDescription>
           {paradas.length > 0 && (
             <p><strong>Sincronização parada há mais de 24 h:</strong> {paradas.map((s) => (variasEmpresas ? `${s.nome} (${s.empresa})` : s.nome)).join(", ")}.</p>
           )}
@@ -139,68 +147,69 @@ async function Conteudo({ busca }: { busca: Promise<{ categoria?: string; estado
               {naoBatem.map((i) => `${tipoDaExportacao(i.rota)} de ${rotuloDoMes(i.mes)}${variasEmpresas ? ` (${i.empresa})` : ""}`).join(", ")}.
             </p>
           )}
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       <section className="mt-8">
         <h2 className="text-lg font-semibold">Sincronizações</h2>
-        <div className="mt-2 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-neutral-300">
-                {variasEmpresas && <th className="py-2 pr-4">Empresa</th>}
-                <th className="py-2 pr-4">Dados</th>
-                <th className="pr-4">Última conclusão</th>
-                <th className="pr-4 text-right">Falhas desde então</th>
-                <th className="pr-4">Último erro</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="mt-3 overflow-hidden rounded-2xl border bg-card">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {variasEmpresas && <TableHead>Empresa</TableHead>}
+                <TableHead>Dados</TableHead>
+                <TableHead>Última conclusão</TableHead>
+                <TableHead className="text-right">Falhas desde então</TableHead>
+                <TableHead>Último erro</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {status.map((s) => (
-                <tr key={`${s.empresa}:${s.rota}`} className={`border-b border-neutral-200 ${s.parado ? "bg-red-50 text-red-900" : ""}`}>
-                  {variasEmpresas && <td className="py-2 pr-4">{s.empresa}</td>}
-                  <td className="py-2 pr-4">{s.nome}{s.parado && <span className="ml-2 text-xs font-semibold">parada</span>}</td>
-                  <td className="pr-4 tabular-nums">{dataHora(s.ultimaConclusao)}</td>
-                  <td className="pr-4 text-right tabular-nums">{s.falhas}</td>
-                  <td className="pr-4 text-xs text-neutral-700">{s.ultimoErro ? s.ultimoErro.slice(0, 200) : "—"}</td>
-                </tr>
+                <TableRow key={`${s.empresa}:${s.rota}`} className={`${s.parado ? "bg-destructive/5" : ""}`}>
+                  {variasEmpresas && <TableCell>{s.empresa}</TableCell>}
+                  <TableCell>{s.nome}{s.parado && <Status tom="erro" className="ml-2">parada</Status>}</TableCell>
+                  <TableCell className="tabular-nums">{dataHora(s.ultimaConclusao)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{s.falhas}</TableCell>
+                  <TableCell className="min-w-64 text-xs whitespace-normal text-muted-foreground">{s.ultimoErro ? s.ultimoErro.slice(0, 200) : "—"}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </section>
 
       <section className="mt-8">
         <h2 className="text-lg font-semibold">Integridade das exportações</h2>
-        <p className="mt-1 text-sm text-neutral-600">
+        <p className="mt-1 text-sm text-muted-foreground">
           Último job concluído de cada mês nos 119 dias (antes do expurgo do bruto), conferido contra o que veio do ProDoctor (linhas e total; nos
           repasses, também os títulos). {integridade.length - naoBatem.length} de {integridade.length} batem.
         </p>
-        <div className="mt-2 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-neutral-300">
-                <th className="py-2 pr-4">Exportação</th>
-                <th className="pr-4">Mês</th>
-                <th className="pr-4 text-right">Linhas (ProDoctor / Hub)</th>
-                <th className="pr-4 text-right">Total (ProDoctor / Hub)</th>
-                <th className="pr-4 text-right">Títulos (ProDoctor / Hub)</th>
-                <th className="pr-4">Conferido</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="mt-3 overflow-hidden rounded-2xl border bg-card">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Exportação</TableHead>
+                <TableHead>Mês</TableHead>
+                <TableHead className="text-right">Linhas (ProDoctor / Hub)</TableHead>
+                <TableHead className="text-right">Total (ProDoctor / Hub)</TableHead>
+                <TableHead className="text-right">Títulos (ProDoctor / Hub)</TableHead>
+                <TableHead>Conferido</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {integridade.map((i) => (
-                <tr key={i.job_id} className={`border-b border-neutral-200 ${i.bate ? "" : "bg-red-50 text-red-900"}`}>
-                  <td className="py-2 pr-4">{tipoDaExportacao(i.rota)}</td>
-                  <td className="pr-4">{rotuloDoMes(i.mes)}</td>
-                  <td className="pr-4 text-right tabular-nums">{i.linhas_bruto} / {i.linhas_hub}</td>
-                  <td className="pr-4 text-right tabular-nums">{formatarReais(i.total_bruto)} / {formatarReais(i.total_hub)}</td>
-                  <td className="pr-4 text-right tabular-nums">{i.titulos_bruto === null ? "—" : `${i.titulos_bruto} / ${i.titulos_hub}`}</td>
-                  <td className="pr-4">{i.bate ? "bate" : <strong>não bate</strong>}</td>
-                </tr>
+                <TableRow key={i.job_id} className={`${i.bate ? "" : "bg-destructive/5"}`}>
+                  <TableCell>{tipoDaExportacao(i.rota)}</TableCell>
+                  <TableCell>{rotuloDoMes(i.mes)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{i.linhas_bruto} / {i.linhas_hub}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatarReais(i.total_bruto)} / {formatarReais(i.total_hub)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{i.titulos_bruto === null ? "—" : `${i.titulos_bruto} / ${i.titulos_hub}`}</TableCell>
+                  <TableCell>{i.bate ? <Status tom="sucesso">bate</Status> : <Status tom="erro">não bate</Status>}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </section>
 
@@ -209,77 +218,62 @@ async function Conteudo({ busca }: { busca: Promise<{ categoria?: string; estado
         <nav className="mt-2 flex flex-wrap gap-2 text-sm" aria-label="Estado">
           {(["aberta", "resolvida"] as const).map((e) => (
             <Link key={e} href={url({ estado: e, categoria: null })} aria-current={e === estado ? "page" : undefined}
-              className={`rounded border px-3 py-1 ${e === estado ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300"}`}>
+              className={`rounded-lg border px-3 py-1 ${e === estado ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
               {e === "aberta" ? "Abertas" : `Resolvidas (últimas ${RESOLVIDAS_MOSTRADAS})`}
             </Link>
           ))}
         </nav>
         <nav className="mt-2 flex flex-wrap gap-2 text-sm" aria-label="Categoria">
           <Link href={url({ categoria: null })} aria-current={filtro === null ? "page" : undefined}
-            className={`rounded border px-3 py-1 ${filtro === null ? "border-neutral-900" : "border-neutral-300"}`}>
+            className={`rounded-lg border px-3 py-1 ${filtro === null ? "border-primary" : "border-border"}`}>
             Todas ({classificadas.length})
           </Link>
           {(Object.keys(CATEGORIAS) as Categoria[]).filter((c) => contagem.has(c)).map((c) => (
             <Link key={c} href={url({ categoria: c })} aria-current={filtro === c ? "page" : undefined}
-              className={`rounded border px-3 py-1 ${filtro === c ? "border-neutral-900" : "border-neutral-300"}`}>
+              className={`rounded-lg border px-3 py-1 ${filtro === c ? "border-primary" : "border-border"}`}>
               {CATEGORIAS[c]} ({contagem.get(c)})
             </Link>
           ))}
         </nav>
 
         {mostradas.length === 0 ? (
-          <p className="mt-4 text-sm text-neutral-600">{estado === "aberta" ? "Nenhuma pendência aberta." : "Nenhuma pendência resolvida."}</p>
+          estado === "aberta" ? (
+            <Vazio
+              icone={CircleCheck}
+              titulo={filtro ? `Nenhuma pendência aberta de ${CATEGORIAS[filtro].toLowerCase()}` : "Nenhuma pendência aberta"}
+              descricao="O que o Hub não conseguir conciliar com o ProDoctor aparece aqui."
+            />
+          ) : (
+            <Vazio titulo="Nenhuma pendência resolvida" descricao="As pendências resolvidas, à mão ou pela sincronização, ficam listadas aqui." />
+          )
         ) : (
-          <div className="mt-2 overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-neutral-300">
-                  <th className="py-2 pr-4">Desde</th>
-                  <th className="pr-4">Categoria</th>
-                  <th className="pr-4">O que é</th>
-                  <th className="pr-4">Registro de origem</th>
-                  <th className="pr-4">{estado === "aberta" ? "Resolver" : "Resolvida"}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mostradas.map((p) => (
-                  <tr key={p.id} className="border-b border-neutral-200 align-top">
-                    <td className="py-2 pr-4 tabular-nums">{dataHora(p.criado_em)}</td>
-                    <td className="pr-4">{CATEGORIAS[p.classificacao.categoria]}</td>
-                    <td className="pr-4">{p.descricao}</td>
-                    <td className="pr-4">
-                      {p.classificacao.origem.link ? <Link href={p.classificacao.origem.link} className="underline">{p.classificacao.origem.texto}</Link> : p.classificacao.origem.texto}
-                    </td>
-                    <td className="pr-4">
-                      {estado === "resolvida" ? (
-                        <span>{dataHora(p.resolvido_em)}{p.justificativa ? ` · ${p.justificativa}` : " · pela sincronização"}</span>
-                      ) : !p.classificacao.resolveAMao ? (
-                        <span className="text-xs text-neutral-600">Fecha sozinha ao corrigir o cadastro</span>
-                      ) : podeResolver ? (
-                        <form action={resolverPendencia} className="flex gap-2">
-                          <input type="hidden" name="id" value={p.id} />
-                          <input name="justificativa" required maxLength={1000} placeholder="Justificativa"
-                            aria-label={`Justificativa para resolver a pendência ${p.id}`} className="w-48 rounded border border-neutral-300 px-2 py-1" />
-                          <button type="submit" className="rounded border border-neutral-900 px-2 py-1">Resolver</button>
-                        </form>
-                      ) : (
-                        <span className="text-xs text-neutral-600">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <TabelaDePendencias
+            linhas={mostradas.map((p) => ({
+              id: p.id,
+              criadoEm: p.criado_em,
+              criadoEmTexto: dataHora(p.criado_em),
+              categoria: CATEGORIAS[p.classificacao.categoria],
+              descricao: p.descricao,
+              origem: p.classificacao.origem,
+              resolucao:
+                estado === "resolvida"
+                  ? { tipo: "resolvida", quando: dataHora(p.resolvido_em), justificativa: p.justificativa }
+                  : !p.classificacao.resolveAMao
+                    ? { tipo: "automatica" }
+                    : podeResolver
+                      ? { tipo: "resolver" }
+                      : { tipo: "sem-permissao" },
+            }))}
+          />
         )}
       </section>
-    </main>
+    </div>
   );
 }
 
 export default function Conferencia({ searchParams }: { searchParams: Promise<{ categoria?: string; estado?: string }> }) {
   return (
-    <Suspense fallback={<p className="p-8">Carregando…</p>}>
+    <Suspense fallback={<EsqueletoDeTela tabelas={3} largura="max-w-6xl" />}>
       <Conteudo busca={searchParams} />
     </Suspense>
   );

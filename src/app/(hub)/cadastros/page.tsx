@@ -6,7 +6,13 @@ import { lerTudo } from "@/lib/ler-tudo";
 import { carregarSugestoes, type SinaisComSugestao } from "@/cadastros/sinais";
 import { valorExibido } from "@/cadastros/sugestoes-aplicaveis";
 import { pedeSoAtivos } from "@/sync/fila";
-import { aceitarSugestoes, revisarCadastro } from "./acoes";
+import { aceitarSugestoes } from "./acoes";
+import { BotaoDeEnvio, FormularioDeAcao } from "@/components/formulario-de-acao";
+import { TabelaDeCadastros, type LinhaDeCadastro } from "./tabela-de-cadastros";
+import { Lightbulb, ListChecks } from "lucide-react";
+import { EsqueletoDeTela } from "@/components/esqueleto-de-tela";
+import { Vazio } from "@/components/vazio";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const TIPOS = [
   { valor: "profissional", rotulo: "Profissionais" },
@@ -53,10 +59,9 @@ async function Conteudo({ busca }: { busca: Promise<Filtros> }) {
   const comSugestao = linhas.filter((l) => l.revisado_em === null && sugestoes.get(l.id)?.sugestao);
 
   return (
-    <main className="mx-auto max-w-4xl p-8">
-      <Link href="/painel" className="text-sm underline">← Painel</Link>
-      <h1 className="mt-2 text-2xl font-semibold">Cadastros e de-para</h1>
-      <p className="mt-1 text-sm text-neutral-600">
+    <div className="mx-auto max-w-4xl p-8">
+      <h1 className="text-2xl font-semibold">Cadastros e de-para</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
         Vindos do ProDoctor. Cadastro novo fica &quot;a revisar&quot; até alguém confirmar.
       </p>
 
@@ -66,123 +71,80 @@ async function Conteudo({ busca }: { busca: Promise<Filtros> }) {
             key={t.valor}
             href={href(t.valor, soARevisar ? "a-revisar" : "todos")}
             aria-current={t.valor === tipo ? "page" : undefined}
-            className={`rounded border px-3 py-1 ${t.valor === tipo ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300"}`}
+            className={`rounded-lg border px-3 py-1 ${t.valor === tipo ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}
           >
             {t.rotulo}
           </Link>
         ))}
-        <span className="mx-2 self-center text-neutral-400">|</span>
+        <span className="mx-2 self-center text-muted-foreground/70">|</span>
         <Link href={href(tipo, "a-revisar")} className={soARevisar ? "font-semibold underline" : "underline"}>A revisar</Link>
         <Link href={href(tipo, "todos")} className={!soARevisar ? "font-semibold underline" : "underline"}>Todos</Link>
       </nav>
 
-      <p className="mt-4 text-sm text-neutral-600">{linhas.length} {soARevisar ? "a revisar" : "no total"}</p>
+      <p className="mt-4 text-sm text-muted-foreground">{linhas.length} {soARevisar ? "a revisar" : "no total"}</p>
 
       {comSugestao.length > 0 && (
-        <form action={aceitarSugestoes} className="mt-4 rounded border border-amber-300 bg-amber-50 p-4 text-sm">
+        <FormularioDeAcao acao={aceitarSugestoes} className="mt-4">
+          <Alert variant="atencao">
+          <Lightbulb />
+          <AlertTitle>Sugestões do Hub para {comSugestao.length} profissionais</AlertTitle>
+          <AlertDescription>
           {/* O que está na tela agora: a ação aplica só isto, e só se nada mudou (code-review item 6). */}
           {comSugestao.map((l) => (
             <input key={l.id} type="hidden" name="exibida" value={valorExibido(l.id, sugestoes.get(l.id)!.sugestao!)} />
           ))}
           <p>
-            O Hub tem sugestão para <strong>{comSugestao.length}</strong> profissionais a revisar
-            ({comSugestao.filter((l) => sugestoes.get(l.id)?.sugestao === "medico").length} médicos,{" "}
-            {comSugestao.filter((l) => sugestoes.get(l.id)?.sugestao === "nao_medico").length} não médicos), pela especialidade
+            {comSugestao.filter((l) => sugestoes.get(l.id)?.sugestao === "medico").length} médicos e{" "}
+            {comSugestao.filter((l) => sugestoes.get(l.id)?.sugestao === "nao_medico").length} não médicos, pela especialidade
             e pelo volume de procedimentos. Confira a coluna &quot;Sugestão&quot; antes de aceitar.
           </p>
           <label className="mt-2 flex items-center gap-2">
-            <input type="checkbox" name="confirmo" value="sim" required />
+            <input type="checkbox" name="confirmo" value="sim" required className="size-4 accent-primary" />
             Conferi as sugestões e quero aplicá-las com o meu usuário
           </label>
-          <button className="mt-3 rounded bg-neutral-900 px-3 py-1.5 text-white">Aceitar {comSugestao.length} sugestões</button>
-        </form>
+          <BotaoDeEnvio className="mt-3 w-fit">Aceitar {comSugestao.length} sugestões</BotaoDeEnvio>
+          </AlertDescription>
+          </Alert>
+        </FormularioDeAcao>
       )}
 
-      <div className="mt-2 overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-neutral-300">
-              <th className="py-2 pr-4">Nome</th>
-              <th className="pr-4">Código</th>
-              <th className="pr-4">Situação</th>
-              {tipo === "profissional" && <th className="pr-4">Sugestão</th>}
-              <th className="pr-4">Revisão</th>
-            </tr>
-          </thead>
-          <tbody>
-            {linhas.map((l) => (
-              <tr key={l.id} className="border-b border-neutral-200 align-middle">
-                <td className="py-2 pr-4">{l.nome_origem}</td>
-                <td className="pr-4 font-mono text-xs text-neutral-600">{l.empresa}:{l.codigo_origem}</td>
-                <td className="pr-4">
-                  {!l.visto_na_ultima_sync && pedeSoAtivos(tipo) ? (
-                    // O job pede só os ativos (o ProDoctor não diz o estado do usuário): fora da lista é inativo ou removido.
-                    <span className="rounded bg-neutral-200 px-2 py-0.5 text-xs">Inativo ou removido no ProDoctor</span>
-                  ) : !l.visto_na_ultima_sync ? (
-                    <span className="rounded bg-red-100 px-2 py-0.5 text-xs text-red-800">Sumiu do ProDoctor</span>
-                  ) : !l.ativo ? (
-                    <span className="rounded bg-neutral-200 px-2 py-0.5 text-xs">Inativo</span>
-                  ) : (
-                    <span className="text-xs text-neutral-500">Ativo</span>
-                  )}
-                </td>
-                {tipo === "profissional" && (
-                  <td className="pr-4 text-xs">
-                    <Sinais sinais={sugestoes.get(l.id)} />
-                  </td>
-                )}
-                <td className="pr-4">
-                  <Revisao linha={l} tipo={tipo} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </main>
-  );
-}
-
-function Sinais({ sinais }: { sinais?: SinaisComSugestao }) {
-  if (!sinais) return <span className="text-neutral-400">—</span>;
-  const rotulo = sinais.sugestao === "medico" ? "Médico" : sinais.sugestao === "nao_medico" ? "Não é médico" : "Revisar";
-  const cor = sinais.sugestao === "medico" ? "bg-green-100 text-green-900" : sinais.sugestao === "nao_medico" ? "bg-neutral-200" : "bg-amber-100 text-amber-900";
-  return (
-    <div>
-      <span className={`rounded px-1.5 py-0.5 ${cor}`}>{rotulo}</span>
-      <p className="mt-1 text-neutral-600">{sinais.motivo}</p>
-      <p className="text-neutral-500">{sinais.procedimentos} procedimentos em {sinais.meses} meses</p>
+      {linhas.length === 0 ? (
+        <Vazio
+          icone={ListChecks}
+          titulo={soARevisar ? "Nada a revisar" : "Nenhum cadastro"}
+          descricao={soARevisar ? "Cadastro novo do ProDoctor aparece aqui na próxima sincronização." : "Ainda não veio cadastro deste tipo do ProDoctor."}
+        />
+      ) : (
+        <TabelaDeCadastros
+          key={tipo}
+          profissional={tipo === "profissional"}
+          linhas={linhas.map((l) => ({
+            id: l.id,
+            nome: l.nome_origem,
+            codigo: `${l.empresa}:${l.codigo_origem}`,
+            situacao: situacaoDe(l, tipo),
+            sinais: sugestoes.get(l.id) ?? null,
+            revisado: l.revisado_em !== null,
+            medico: l.profissionais?.eh_medico ?? null,
+          }))}
+        />
+      )}
     </div>
   );
 }
 
-function Revisao({ linha, tipo }: { linha: Linha; tipo: Tipo }) {
-  const medico = linha.profissionais?.eh_medico;
-  const revisado = linha.revisado_em !== null;
-  const botao = "rounded border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100";
-
-  if (tipo === "profissional") {
-    return (
-      <form action={revisarCadastro} className="flex items-center gap-2">
-        <input type="hidden" name="id" value={linha.id} />
-        {revisado && <span className="text-xs text-neutral-600">{medico ? "Médico" : "Não é médico"}</span>}
-        <button name="medico" value="sim" className={botao} aria-pressed={revisado && medico === true}>É médico</button>
-        <button name="medico" value="nao" className={botao} aria-pressed={revisado && medico === false}>Não é médico</button>
-      </form>
-    );
-  }
-  if (revisado) return <span className="text-xs text-neutral-600">Confirmado</span>;
-  return (
-    <form action={revisarCadastro}>
-      <input type="hidden" name="id" value={linha.id} />
-      <button className={botao}>Confirmar</button>
-    </form>
-  );
+/** Etiqueta da situação no ProDoctor; `null` é ativo (sem etiqueta). */
+function situacaoDe(l: Linha, tipo: Tipo): LinhaDeCadastro["situacao"] {
+  // O job pede só os ativos (o ProDoctor não diz o estado do usuário): fora da lista é inativo ou removido.
+  if (!l.visto_na_ultima_sync && pedeSoAtivos(tipo)) return { tom: "neutro", texto: "Inativo ou removido no ProDoctor" };
+  if (!l.visto_na_ultima_sync) return { tom: "erro", texto: "Sumiu do ProDoctor" };
+  if (!l.ativo) return { tom: "neutro", texto: "Inativo" };
+  return null;
 }
 
 export default function Cadastros({ searchParams }: { searchParams: Promise<Filtros> }) {
   return (
-    <Suspense fallback={<p className="p-8">Carregando…</p>}>
+    <Suspense fallback={<EsqueletoDeTela largura="max-w-4xl" />}>
       <Conteudo busca={searchParams} />
     </Suspense>
   );
