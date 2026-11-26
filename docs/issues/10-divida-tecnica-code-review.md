@@ -1,7 +1,5 @@
 # 10 — Dívida técnica do /code-review de 26/11/2026
 
-Status: ready-for-agent
-
 **Tipo:** AFK · **Depende de:** nada (pode entrar antes, junto ou depois da 07/08) · **Origem:** `/code-review` desde `fa12330`
 
 Os itens 1 a 4 da revisão já foram corrigidos (commits `56a3cf3`, `ae24e6c`, `5b1198b`, `c8f27f0`). Estes são os 6 restantes, menores. Cada um vira uma fatia com teste que falha antes da correção (`/tdd`).
@@ -52,7 +50,9 @@ Seams confirmadas: S1 item 5 (cliente e executarJob), S2 item 6 (`sugestoesAplic
   Ajustes menores: `.order("de_para_id")` também no PostgREST (item 8); marcações (`MARCACOES`) numa fonte só; o selo da tela lê de `CADASTROS` (`pedeSoAtivos`) em vez de deduzir pelo tipo.
 - **Dívida registrada (não corrigida):** a chave `codigo_local:conta:linha` é montada à mão no SQL e no TS; os comentários "code-review item N" apontam para esta issue.
 
+**Fechada em 26/11/2026.** Itens 5 a 10 corrigidos e em produção; CI verde no `64b6acc`.
+
 ## Critérios de aceite
 - [x] Cada item com teste que falhou antes da correção.
-- [ ] `npm run check` verde no CI.
+- [x] `npm run check` verde no CI.
 - [x] Itens 7 e 9 conferidos contra o banco/API reais.
