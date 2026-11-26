@@ -18,7 +18,7 @@ type Origem = { codigo_origem: string; nome_origem: string; unidade_id: number |
 
 const CAMPOS_DO_BANCO: Record<keyof RegistroDeProcedimento, string> = {
   codigoLocal: "codigo_local", conta: "conta", linha: "linha", fatura: "fatura", data: "data",
-  nomeProfissional: "nome_profissional_origem", nomeConvenio: "nome_convenio_origem", funcao: "funcao",
+  nomeProfissional: "nome_profissional_origem", nomeConvenio: "nome_convenio_origem", especialidade: "especialidade_profissional", funcao: "funcao",
   funcaoRepasse: "funcao_repasse", codigoProcedimento: "codigo_procedimento", descricaoProcedimento: "descricao_procedimento",
   tipoProcedimento: "tipo_procedimento", grupoProcedimentosRepasses: "grupo_procedimentos_repasses", quantidade: "quantidade",
   valorTotal: "valor_total", valorDiferenca: "valor_diferenca", valorGlosa: "valor_glosa", valorRecuperado: "valor_recuperado",

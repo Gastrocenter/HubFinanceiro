@@ -13,6 +13,8 @@ export type RegistroDeProcedimento = {
   data: string;
   nomeProfissional: string;
   nomeConvenio: string;
+  /** Especialidade do profissional (não é dado de paciente). */
+  especialidade: string;
   funcao: string;
   funcaoRepasse: string;
   codigoProcedimento: string;
@@ -71,6 +73,7 @@ export function lerProcedimentos(pagina: unknown): RegistroDeProcedimento[] {
       data,
       nomeProfissional: b.usuario ?? "",
       nomeConvenio: b.convenio ?? "",
+      especialidade: b.usuarioEspecialidade ?? "",
       funcao: b.funcao ?? "",
       funcaoRepasse: b.funcaoRepasse ?? "",
       codigoProcedimento: b.codigoProcedimento ?? "",

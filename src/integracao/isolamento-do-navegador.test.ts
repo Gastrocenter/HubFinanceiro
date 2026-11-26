@@ -28,6 +28,7 @@ const FUNCOES: Record<string, Record<string, unknown>> = {
   conferir_receita_do_job: { p_job_id: 1 },
   resumo_receita: { p_mes: "2026-10" },
   meses_com_receita: {},
+  sinais_dos_profissionais: {},
   expurgar_payload_de_exportacao: { p_dias: 120 },
   revisar_cadastro: { p_de_para_id: 1, p_usuario: "00000000-0000-0000-0000-000000000000", p_eh_medico: true },
 };

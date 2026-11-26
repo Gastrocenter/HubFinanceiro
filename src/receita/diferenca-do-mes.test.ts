@@ -5,7 +5,7 @@ import type { RegistroDeProcedimento } from "./ler-procedimentos";
 function proc(conta: string, sobrescrever: Partial<RegistroDeProcedimento> = {}): RegistroDeProcedimento {
   return {
     codigoLocal: "1", conta, linha: "1", fatura: "100", data: "2026-10-10",
-    nomeProfissional: "Dra. Ana Teste", nomeConvenio: "Plano Teste", funcao: "Cirurgião", funcaoRepasse: "1",
+    nomeProfissional: "Dra. Ana Teste", nomeConvenio: "Plano Teste", especialidade: "Gastro", funcao: "Cirurgião", funcaoRepasse: "1",
     codigoProcedimento: "1", descricaoProcedimento: "Consulta", tipoProcedimento: "Consulta", grupoProcedimentosRepasses: "",
     quantidade: "1", valorTotal: "100", valorDiferenca: null, valorGlosa: null, valorRecuperado: null,
     totalMateriaisMedicamentos: "0", totalTaxasDiarias: "0", totalGlosasMateriaisMedicamentos: "0", totalGlosasTaxasDiarias: "0",

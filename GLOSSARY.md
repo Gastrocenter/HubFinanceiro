@@ -35,8 +35,11 @@ Pessoa cadastrada como "usuário" no ProDoctor (médico, técnico, funcionário)
 _Avoid_: Usuário (no Hub, usuário é quem faz login)
 
 **Médico**:
-Profissional que recebe repasse pela produção. A marcação é feita no Hub.
+Profissional com formação médica. A marcação é feita no Hub, com sugestão pela especialidade do ProDoctor. Nem todo profissional que recebe repasse é médico (ex.: nutricionista).
 _Avoid_: Usuário, executante
+
+**Especialidade**:
+Especialidade do profissional como o ProDoctor registra nos procedimentos (ex.: "Médico endoscopista", "Nutricionista em geral").
 
 **Usuário do Hub**:
 Pessoa com login no Hub, com um ou mais perfis.
@@ -64,7 +67,7 @@ Valor que a clínica tem a receber, originado de um procedimento faturado, vincu
 _Avoid_: Receita (receita é o conceito contábil, recebível é o registro)
 
 **Repasse**:
-Valor devido ao médico pela produção, por regra de percentual ou valor fixo, com composição bruto, imposto e líquido.
+Valor devido ao profissional (médico ou não) pela produção, por regra de percentual ou valor fixo, com composição bruto, imposto e líquido.
 _Avoid_: Comissão, pagamento do médico
 
 **Glosa**:

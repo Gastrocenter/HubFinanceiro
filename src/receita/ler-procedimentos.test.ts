@@ -23,7 +23,7 @@ describe("lerProcedimentos", () => {
     const [p] = lerProcedimentos(pagina(linha()));
     expect(p).toMatchObject({
       codigoLocal: "1", conta: "300400", linha: "2", fatura: "100200", data: "2026-10-15",
-      nomeProfissional: "Dra. Ana Teste", nomeConvenio: "Plano Teste",
+      nomeProfissional: "Dra. Ana Teste", nomeConvenio: "Plano Teste", especialidade: "Gastro",
       codigoProcedimento: "40201120", quantidade: "1",
       valorTotal: "450.75", valorGlosa: "50", valorRecuperado: null, valorDiferenca: null, totalTaxasDiarias: "120.5",
       naoRepassar: false, somenteRepasse: false, naoIncluirRepasse: true,

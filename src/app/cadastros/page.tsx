@@ -3,7 +3,8 @@ import Link from "next/link";
 import { exigirAcesso } from "@/lib/sessao";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
 import { lerTudo } from "@/lib/ler-tudo";
-import { revisarCadastro } from "./acoes";
+import { carregarSugestoes, type SinaisComSugestao } from "@/cadastros/sinais";
+import { aceitarSugestoes, revisarCadastro } from "./acoes";
 
 const TIPOS = [
   { valor: "profissional", rotulo: "Profissionais" },
@@ -46,6 +47,8 @@ async function Conteudo({ busca }: { busca: Promise<Filtros> }) {
     if (soARevisar) consulta = consulta.is("revisado_em", null);
     return consulta.range(de, ate).returns<Linha[]>();
   }, "ler cadastros");
+  const sugestoes = tipo === "profissional" ? await carregarSugestoes(db) : new Map<number, SinaisComSugestao>();
+  const comSugestao = linhas.filter((l) => l.revisado_em === null && sugestoes.get(l.id)?.sugestao);
 
   return (
     <main className="mx-auto max-w-4xl p-8">
@@ -73,6 +76,22 @@ async function Conteudo({ busca }: { busca: Promise<Filtros> }) {
 
       <p className="mt-4 text-sm text-neutral-600">{linhas.length} {soARevisar ? "a revisar" : "no total"}</p>
 
+      {comSugestao.length > 0 && (
+        <form action={aceitarSugestoes} className="mt-4 rounded border border-amber-300 bg-amber-50 p-4 text-sm">
+          <p>
+            O Hub tem sugestão para <strong>{comSugestao.length}</strong> profissionais a revisar
+            ({comSugestao.filter((l) => sugestoes.get(l.id)?.sugestao === "medico").length} médicos,{" "}
+            {comSugestao.filter((l) => sugestoes.get(l.id)?.sugestao === "nao_medico").length} não médicos), pela especialidade
+            e pelo volume de procedimentos. Confira a coluna &quot;Sugestão&quot; antes de aceitar.
+          </p>
+          <label className="mt-2 flex items-center gap-2">
+            <input type="checkbox" name="confirmo" value="sim" required />
+            Conferi as sugestões e quero aplicá-las com o meu usuário
+          </label>
+          <button className="mt-3 rounded bg-neutral-900 px-3 py-1.5 text-white">Aceitar {comSugestao.length} sugestões</button>
+        </form>
+      )}
+
       <div className="mt-2 overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
@@ -80,6 +99,7 @@ async function Conteudo({ busca }: { busca: Promise<Filtros> }) {
               <th className="py-2 pr-4">Nome</th>
               <th className="pr-4">Código</th>
               <th className="pr-4">Situação</th>
+              {tipo === "profissional" && <th className="pr-4">Sugestão</th>}
               <th className="pr-4">Revisão</th>
             </tr>
           </thead>
@@ -97,6 +117,11 @@ async function Conteudo({ busca }: { busca: Promise<Filtros> }) {
                     <span className="text-xs text-neutral-500">Ativo</span>
                   )}
                 </td>
+                {tipo === "profissional" && (
+                  <td className="pr-4 text-xs">
+                    <Sinais sinais={sugestoes.get(l.id)} />
+                  </td>
+                )}
                 <td className="pr-4">
                   <Revisao linha={l} tipo={tipo} />
                 </td>
@@ -106,6 +131,19 @@ async function Conteudo({ busca }: { busca: Promise<Filtros> }) {
         </table>
       </div>
     </main>
+  );
+}
+
+function Sinais({ sinais }: { sinais?: SinaisComSugestao }) {
+  if (!sinais) return <span className="text-neutral-400">—</span>;
+  const rotulo = sinais.sugestao === "medico" ? "Médico" : sinais.sugestao === "nao_medico" ? "Não é médico" : "Revisar";
+  const cor = sinais.sugestao === "medico" ? "bg-green-100 text-green-900" : sinais.sugestao === "nao_medico" ? "bg-neutral-200" : "bg-amber-100 text-amber-900";
+  return (
+    <div>
+      <span className={`rounded px-1.5 py-0.5 ${cor}`}>{rotulo}</span>
+      <p className="mt-1 text-neutral-600">{sinais.motivo}</p>
+      <p className="text-neutral-500">{sinais.procedimentos} procedimentos em {sinais.meses} meses</p>
+    </div>
   );
 }
 

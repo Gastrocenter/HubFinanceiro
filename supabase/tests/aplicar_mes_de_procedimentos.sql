@@ -7,7 +7,7 @@ declare
   v numeric;
   dif jsonb := $j${
     "gravar": [
-      {"codigo_local":"1","conta":"A","linha":"1","data":"2026-10-10","valor_total":"123.45678901234567","valor_glosa":null},
+      {"codigo_local":"1","conta":"A","linha":"1","data":"2026-10-10","valor_total":"123.45678901234567","valor_glosa":null,"especialidade_profissional":"Médico teste"},
       {"codigo_local":"1","conta":"B","linha":"1","data":"2026-10-11","valor_total":"100","nome_profissional_origem":"Sem Par Teste"}
     ],
     "pendencias": [{"tipo":"profissional_sem_par","referencia":"Sem Par Teste","descricao":"Profissional sem de-para"}]
@@ -20,6 +20,8 @@ begin
   if n <> 2 then falhas := falhas || ' RECEBIVEIS_ESPERADO_2_VEIO_' || n; end if;
   select valor_total into v from public.recebiveis where empresa = 'TESTE_S5' and conta = 'A';
   if v <> 123.45678901234567 then falhas := falhas || ' VALOR_NAO_EXATO_' || v; end if;
+  select count(*) into n from public.recebiveis where empresa = 'TESTE_S5' and conta = 'A' and especialidade_profissional = 'Médico teste';
+  if n <> 1 then falhas := falhas || ' ESPECIALIDADE_NAO_GRAVADA'; end if;
   select count(*) into n from public.pendencias where empresa = 'TESTE_S5' and tipo = 'profissional_sem_par' and estado = 'aberta';
   if n <> 1 then falhas := falhas || ' PENDENCIA_NOME_ESPERADO_1_VEIO_' || n; end if;
 
