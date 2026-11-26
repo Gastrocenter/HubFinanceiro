@@ -17,7 +17,7 @@ export function chaveDoProcedimento(p: Pick<RegistroDeProcedimento, "codigoLocal
 
 /** Compara o que o Hub tem de um mês com o que veio do ProDoctor para o mesmo mês (escopo inteiro do mês). */
 /** Uma linha por chave, a última que veio: a paginação pode repetir um registro quando os dados mudam durante a busca. */
-function semRepetidos(vindos: RegistroDeProcedimento[]): RegistroDeProcedimento[] {
+export function semRepetidos(vindos: RegistroDeProcedimento[]): RegistroDeProcedimento[] {
   const porChave = new Map<string, RegistroDeProcedimento>();
   for (const v of vindos) {
     const chave = chaveDoProcedimento(v);

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { diferencaDoMes, type ProcedimentoAtual } from "./diferenca-do-mes";
+import { chaveDoProcedimento, diferencaDoMes, type ProcedimentoAtual } from "./diferenca-do-mes";
 import { lerProcedimentos, type RegistroDeProcedimento } from "./ler-procedimentos";
+import { planejarGravacao, type Vinculos } from "./planejar-gravacao";
 import { resolverPorNome } from "./resolver-por-nome";
 import { lerTudo } from "@/lib/ler-tudo";
 
@@ -46,6 +47,9 @@ const NUMERICOS = new Set([
 const SELECT_RECEBIVEIS = [
   ...Object.values(CAMPOS_DO_BANCO).map((c) => (NUMERICOS.has(c) ? `${c}:${c}::text` : c)),
   "visto_na_ultima_sync",
+  "unidade_id",
+  "profissional_id",
+  "convenio_id",
 ].join(",");
 
 function doBanco(linha: Record<string, unknown>): RegistroDeProcedimento {
@@ -73,10 +77,14 @@ export async function normalizarProcedimentosDoJob(
     (de, ate) => db.from("recebiveis").select(SELECT_RECEBIVEIS).eq("empresa", job.empresa).eq("mes", mes).order("id").range(de, ate),
     `ler recebíveis de ${mes}`,
   );
-  const atuais: ProcedimentoAtual[] = (linhasDoMes as unknown as Record<string, unknown>[]).map((l) => ({
-    registro: doBanco(l),
-    vistoNaUltimaSync: Boolean(l.visto_na_ultima_sync),
-  }));
+  const linhas = linhasDoMes as unknown as Record<string, unknown>[];
+  const atuais: ProcedimentoAtual[] = linhas.map((l) => ({ registro: doBanco(l), vistoNaUltimaSync: Boolean(l.visto_na_ultima_sync) }));
+  const vinculosAtuais = new Map(
+    linhas.map((l) => [
+      chaveDoProcedimento(doBanco(l)),
+      { unidade_id: l.unidade_id as number | null, profissional_id: l.profissional_id as number | null, convenio_id: l.convenio_id as number | null },
+    ]),
+  );
 
   const dif = diferencaDoMes(atuais, vindos);
 
@@ -91,9 +99,17 @@ export async function normalizarProcedimentosDoJob(
   const unidades = new Map(doTipo("unidade").map((o) => [o.codigo_origem, o.unidade_id!]));
 
   const pendencias = new Map<string, { tipo: string; referencia: string; descricao: string; detalhes: Record<string, unknown> }>();
-  function vincular(nome: string, cadastros: { id: number; nome: string }[], qual: "profissional" | "convenio"): number | null {
+  /** Pendências de vínculo que agora casaram: fecham na mesma transação (code-review item 2). */
+  const resolver = new Map<string, { tipo: string; referencia: string }>();
+  function marcarResolvido(qual: string, referencia: string) {
+    for (const tipo of [`${qual}_sem_par`, `${qual}_ambiguo`]) resolver.set(`${tipo}:${referencia}`, { tipo, referencia });
+  }
+  function vincularPorNome(nome: string, cadastros: { id: number; nome: string }[], qual: "profissional" | "convenio"): number | null {
     const r = resolverPorNome(nome, cadastros);
-    if (r.tipo === "casou") return r.id;
+    if (r.tipo === "casou") {
+      marcarResolvido(qual, nome);
+      return r.id;
+    }
     const tipo = r.tipo === "ambiguo" ? `${qual}_ambiguo` : `${qual}_sem_par`;
     pendencias.set(`${tipo}:${nome}`, {
       tipo,
@@ -103,26 +119,39 @@ export async function normalizarProcedimentosDoJob(
     });
     return null;
   }
-
-  const gravar = [...dif.novos, ...dif.alterados.map((a) => a.registro)].map((r) => {
+  function vincular(r: RegistroDeProcedimento): Vinculos {
     const unidade = unidades.get(r.codigoLocal) ?? null;
     if (unidade === null) {
       pendencias.set(`unidade_sem_par:${r.codigoLocal}`, {
         tipo: "unidade_sem_par", referencia: r.codigoLocal, descricao: "Código de unidade sem de-para", detalhes: { mes },
       });
+    } else {
+      marcarResolvido("unidade", r.codigoLocal);
     }
     return {
-      ...paraBanco(r),
       unidade_id: unidade,
-      profissional_id: vincular(r.nomeProfissional, profissionais, "profissional"),
-      convenio_id: vincular(r.nomeConvenio, convenios, "convenio"),
+      profissional_id: vincularPorNome(r.nomeProfissional, profissionais, "profissional"),
+      convenio_id: vincularPorNome(r.nomeConvenio, convenios, "convenio"),
     };
-  });
+  }
+
+  // Regrava o que mudou no ProDoctor e também o que só mudou de vínculo (ex.: cadastro que passou a existir).
+  const gravar = planejarGravacao({ vindos, diferenca: dif, vinculosAtuais, vincular }).map(({ registro, vinculos }) => ({
+    ...paraBanco(registro),
+    ...vinculos,
+  }));
+  const religados = gravar.length - dif.novos.length - dif.alterados.length;
 
   const { error: e4 } = await db.rpc("aplicar_mes_de_procedimentos", {
     p_empresa: job.empresa,
     p_mes: mes,
-    p_diferenca: { gravar, sumiram: dif.sumiram, voltaram: dif.voltaram, pendencias: [...pendencias.values()] },
+    p_diferenca: {
+      gravar,
+      sumiram: dif.sumiram,
+      voltaram: dif.voltaram,
+      pendencias: [...pendencias.values()],
+      resolver: [...resolver.values()],
+    },
   });
   if (e4) throw new Error(`aplicar mês ${mes}: ${e4.message}`);
 
@@ -132,6 +161,7 @@ export async function normalizarProcedimentosDoJob(
     foraDoMes: todos.length - vindos.length,
     novos: dif.novos.length,
     alterados: dif.alterados.length,
+    religados,
     sumiram: dif.sumiram.length,
     voltaram: dif.voltaram.length,
     pendencias: pendencias.size,
