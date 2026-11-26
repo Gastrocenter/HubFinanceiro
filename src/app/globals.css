@@ -1,26 +1,265 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
+/* O tema escuro vale para quem estiver dentro de um elemento .dark (o styleguide alterna num wrapper). */
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design system do Hub, extraído de docs/Design_System/interface1.webp.
+ * Creme quente de fundo, tinta quase preta para ações, rosa como cor de marca,
+ * tiles pastel para KPIs. Plano: quase sem sombra, cantos generosos.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* === ESCALA DA MARCA (rosa) === */
+  --brand-50: #fdf2f8;
+  --brand-100: #fbe4f1;
+  --brand-200: #f8d2e8;
+  --brand-300: #f4bfdd;
+  --brand-400: #ec9bc9;
+  --brand-500: #e073b0;
+  --brand-600: #c95293;
+  --brand-700: #a63d77;
+  --brand-800: #823062;
+  --brand-900: #5e2347;
+
+  /* === ESCALA NEUTRA (cinza quente / creme) === */
+  --neutral-50: #fcf9f3;
+  --neutral-100: #faf4e8;
+  --neutral-200: #f2ebdd;
+  --neutral-300: #e3d9c6;
+  --neutral-400: #c4b9a4;
+  --neutral-500: #9a907e;
+  --neutral-600: #6e675b;
+  --neutral-700: #4a453d;
+  --neutral-800: #2a2723;
+  --neutral-900: #141414;
+
+  /* === TILES PASTEL (cards de KPI) === */
+  --tile-yellow: #f3d46a;
+  --tile-pink: #f4bfdd;
+  --tile-olive: #a6af68;
+  --tile-blue: #b5c9ec;
+  --tile-foreground: #141414;
+
+  /* === BASE === */
+  --background: var(--neutral-100);
+  --foreground: var(--neutral-900);
+
+  /* === CARD === */
+  --card: var(--neutral-200);
+  --card-foreground: var(--neutral-900);
+
+  /* === POPOVER / DROPDOWN / TOOLTIP === */
+  --popover: var(--neutral-50);
+  --popover-foreground: var(--neutral-900);
+
+  /* === PRIMARY (ação principal: pílula preta) === */
+  --primary: var(--neutral-900);
+  --primary-foreground: var(--neutral-100);
+
+  /* === SECONDARY === */
+  --secondary: #ece4d4;
+  --secondary-foreground: var(--neutral-900);
+
+  /* === MUTED === */
+  --muted: #efe8da;
+  --muted-foreground: var(--neutral-600);
+
+  /* === ACCENT (realce rosa suave: hover, seleção) === */
+  --accent: var(--brand-100);
+  --accent-foreground: var(--neutral-900);
+
+  /* === DESTRUCTIVE === */
+  --destructive: #c0392b;
+  --destructive-foreground: #ffffff;
+
+  /* === BORDERS & INPUTS === */
+  --border: var(--neutral-300);
+  --input: #d6cbb5;
+  --ring: var(--neutral-900);
+
+  /* === BORDER RADIUS === */
+  --radius: 1rem;
+
+  /* === CHART COLORS === */
+  --chart-1: var(--neutral-900);
+  --chart-2: #e073b0;
+  --chart-3: #e2b93b;
+  --chart-4: #7f8b3f;
+  --chart-5: #6f95d6;
+
+  /* === SIDEBAR (preta, como no design) === */
+  --sidebar: #121212;
+  --sidebar-foreground: #ede6d8;
+  --sidebar-primary: var(--brand-300);
+  --sidebar-primary-foreground: var(--neutral-900);
+  --sidebar-accent: #222120;
+  --sidebar-accent-foreground: #faf4e8;
+  --sidebar-border: #2a2826;
+  --sidebar-ring: var(--brand-300);
+
+  /* === CUSTOM SEMANTIC COLORS === */
+  --success: #3f7d45;
+  --success-foreground: #ffffff;
+  --warning: #e9b53f;
+  --warning-foreground: var(--neutral-900);
+  --info: #3b6fc4;
+  --info-foreground: #ffffff;
+}
+
+.dark {
+  --background: #141311;
+  --foreground: #f3ecdf;
+
+  --card: #1e1c19;
+  --card-foreground: #f3ecdf;
+
+  --popover: #1e1c19;
+  --popover-foreground: #f3ecdf;
+
+  --primary: #f3ecdf;
+  --primary-foreground: #141414;
+
+  --secondary: #2a2723;
+  --secondary-foreground: #f3ecdf;
+
+  --muted: #24221e;
+  --muted-foreground: #a9a08f;
+
+  --accent: #3a2632;
+  --accent-foreground: #f8d2e8;
+
+  --destructive: #e5675c;
+  --destructive-foreground: #141414;
+
+  --border: #33302b;
+  --input: #403c36;
+  --ring: #a9a08f;
+
+  --chart-1: #f3ecdf;
+  --chart-2: #ec9bc9;
+  --chart-3: #f3d46a;
+  --chart-4: #b4bd74;
+  --chart-5: #94b3e6;
+
+  --tile-yellow: #d9bc57;
+  --tile-pink: #e0a8c8;
+  --tile-olive: #959e5b;
+  --tile-blue: #9fb5db;
+
+  --sidebar: #0c0c0b;
+  --sidebar-foreground: #ede6d8;
+  --sidebar-primary: var(--brand-300);
+  --sidebar-primary-foreground: #141414;
+  --sidebar-accent: #1c1b19;
+  --sidebar-accent-foreground: #faf4e8;
+  --sidebar-border: #24221f;
+  --sidebar-ring: var(--brand-300);
+
+  --success: #6fb174;
+  --success-foreground: #141414;
+  --warning: #f0c45e;
+  --warning-foreground: #141414;
+  --info: #7fa6e8;
+  --info-foreground: #141414;
 }
 
 @theme inline {
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
+  --color-tile-yellow: var(--tile-yellow);
+  --color-tile-pink: var(--tile-pink);
+  --color-tile-olive: var(--tile-olive);
+  --color-tile-blue: var(--tile-blue);
+  --color-tile-foreground: var(--tile-foreground);
+
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+
+  --color-sand-50: var(--neutral-50);
+  --color-sand-100: var(--neutral-100);
+  --color-sand-200: var(--neutral-200);
+  --color-sand-300: var(--neutral-300);
+  --color-sand-400: var(--neutral-400);
+  --color-sand-500: var(--neutral-500);
+  --color-sand-600: var(--neutral-600);
+  --color-sand-700: var(--neutral-700);
+  --color-sand-800: var(--neutral-800);
+  --color-sand-900: var(--neutral-900);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Sombras quentes e discretas: o design é plano, sombra só para o que flutua. */
+@theme {
+  --shadow-xs: 0 1px 2px rgb(20 20 20 / 0.05);
+  --shadow-sm: 0 1px 3px rgb(20 20 20 / 0.07), 0 1px 2px rgb(20 20 20 / 0.04);
+  --shadow-md: 0 6px 16px -4px rgb(20 20 20 / 0.1);
+  --shadow-lg: 0 16px 40px -12px rgb(20 20 20 / 0.16);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "tnum" 1;
+  }
 }
