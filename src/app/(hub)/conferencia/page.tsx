@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from "next/link";
 import { classificarPendencia, type Categoria } from "@/conferencia/classificar-pendencia";
-import { ROTAS_DO_AGENDAMENTO, statusDasSincronizacoes, type JobDaFila } from "@/conferencia/status-das-sincronizacoes";
+import { lerSincronizacoes } from "@/conferencia/ler-sincronizacoes";
 import { formatarReais } from "@/dominio/formatar-reais";
 import { temPermissao } from "@/dominio/permissoes";
 import { rotuloDoMes } from "@/dominio/rotulo-do-mes";
@@ -11,7 +11,6 @@ import { exigirAcesso } from "@/lib/sessao";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
 import { ROTA_REPASSES } from "@/repasse/normalizar";
 import { ROTA_CONTAS } from "@/contas/normalizar";
-import { empresasConfiguradas } from "@/sync/empresas";
 import { TabelaDePendencias } from "./tabela-de-pendencias";
 import { CircleCheck, TriangleAlert } from "lucide-react";
 import { EsqueletoDeTela } from "@/components/esqueleto-de-tela";
@@ -55,8 +54,6 @@ const CATEGORIAS: Record<Categoria, string> = {
   outra: "Outra",
 };
 
-/** Jobs lidos para o status das sincronizações: o bastante para ver uma parada longa. */
-const DIAS_DE_FILA = 30;
 const RESOLVIDAS_MOSTRADAS = 200;
 const SELECT_PENDENCIAS = "id, tipo, empresa, referencia, descricao, detalhes, estado, criado_em, resolvido_em, justificativa";
 
@@ -70,19 +67,12 @@ async function Conteudo({ busca }: { busca: Promise<{ categoria?: string; estado
   const { categoria, estado: estadoPedido } = await busca;
   const estado = estadoPedido === "resolvida" ? "resolvida" : "aberta";
   const db = criarClienteAdmin();
-  const agora = new Date();
-  const desde = new Date(agora.getTime() - DIAS_DE_FILA * 24 * 60 * 60 * 1000).toISOString();
-
-  const [integridade, jobs, pendencias] = await Promise.all([
+  const [integridade, status, pendencias] = await Promise.all([
     db.rpc("integridade_das_exportacoes").then(({ data, error }) => {
       if (error) throw new Error(error.message);
       return (data ?? []) as Integridade[];
     }),
-    lerTudo(
-      (de, ate) =>
-        db.from("sync_jobs").select("empresa, rota, estado, concluido_em, atualizado_em, ultimo_erro").gte("atualizado_em", desde).order("id").range(de, ate),
-      "ler a fila",
-    ),
+    lerSincronizacoes(db, new Date()),
     estado === "aberta"
       ? lerTudo(
           (de, ate) =>
@@ -97,19 +87,6 @@ async function Conteudo({ busca }: { busca: Promise<{ categoria?: string; estado
           }),
   ]);
 
-  type LinhaDaFila = { empresa: string; rota: string; estado: JobDaFila["estado"]; concluido_em: string | null; atualizado_em: string; ultimo_erro: string | null };
-  const status = statusDasSincronizacoes(
-    (jobs as LinhaDaFila[]).map((j) => ({
-      empresa: j.empresa,
-      rota: j.rota,
-      estado: j.estado,
-      concluidoEm: j.concluido_em,
-      atualizadoEm: j.atualizado_em,
-      ultimoErro: j.ultimo_erro,
-    })),
-    agora,
-    { empresas: empresasConfiguradas(process.env), rotas: ROTAS_DO_AGENDAMENTO },
-  );
   const variasEmpresas = new Set(status.map((s) => s.empresa)).size > 1;
   const paradas = status.filter((s) => s.parado);
   const naoBatem = integridade.filter((i) => !i.bate);
