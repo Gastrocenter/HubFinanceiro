@@ -33,7 +33,18 @@ export async function executarJob(
     repositorio,
     relogio,
     prazoFinal,
-  }: { transporte: Transporte; repositorio: RepositorioDeJobs; relogio: Relogio; prazoFinal: number },
+    aoConcluir,
+  }: {
+    transporte: Transporte;
+    repositorio: RepositorioDeJobs;
+    relogio: Relogio;
+    prazoFinal: number;
+    /**
+     * Trabalho a fazer com o job completo (ex.: normalizar) ANTES de marcá-lo concluído.
+     * Se a rodada morrer no meio, o job segue "executando", a posse vence e outra rodada refaz (idempotente).
+     */
+    aoConcluir?: (job: Job) => Promise<void>;
+  },
 ): Promise<ResultadoDoJob> {
   try {
     for (let pagina = job.proximaPagina; ; pagina++) {
@@ -45,6 +56,11 @@ export async function executarJob(
       const bruto = await transporte(job.rota, { ...job.corpo, pagina });
       const registros = extrairRegistros(bruto, job.caminhoDaLista);
       if (registros.length === 0) {
+        if (aoConcluir) {
+          // Sem tempo para normalizar com folga: pausa e a próxima rodada faz (busca a página vazia de novo).
+          if (relogio.agora() >= prazoFinal) return "pausado";
+          await aoConcluir(job);
+        }
         await repositorio.concluir(job.id);
         return "concluido";
       }

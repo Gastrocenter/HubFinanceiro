@@ -103,19 +103,15 @@ export async function processarFila({
       }
     }
 
-    let resultado = await executarJob(job, { transporte, repositorio, relogio, prazoFinal });
+    // A normalização roda ANTES de concluir (D-M): job concluído sempre já virou de-para ou receita.
+    const aoConcluir =
+      job.rota === ROTA_PROCEDIMENTOS
+        ? async () => void (await normalizarProcedimentosDoJob(db, job))
+        : ehJobDeCadastro(job.rota)
+          ? async () => void (await normalizarCadastrosDoJob(db, job))
+          : undefined;
+    const resultado = await executarJob(job, { transporte, repositorio, relogio, prazoFinal, aoConcluir });
     if (resultado === "pausado") await repositorio.liberar(job.id);
-
-    // Cadastro concluído vira de-para na mesma rodada (D-M). Se falhar, o job fica com o erro visível (F7).
-    if (resultado === "concluido" && (ehJobDeCadastro(job.rota) || job.rota === ROTA_PROCEDIMENTOS)) {
-      try {
-        if (job.rota === ROTA_PROCEDIMENTOS) await normalizarProcedimentosDoJob(db, job);
-        else await normalizarCadastrosDoJob(db, job);
-      } catch (erro) {
-        await repositorio.registrarErro(job.id, `normalização: ${(erro as Error).message}`, true);
-        resultado = "falhou";
-      }
-    }
     processados.push({ jobId: job.id, empresa: job.empresa, rota: job.rota, resultado });
   }
   return { processados };

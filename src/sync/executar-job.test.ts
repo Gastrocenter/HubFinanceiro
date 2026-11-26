@@ -116,4 +116,42 @@ describe("executarJob", () => {
     expect(paginasPedidas).toEqual([999, 1000]);
     expect(repo.eventos.at(-1)).toMatch(/^erro:definitivo:.*1000 páginas/);
   });
+
+  it("roda aoConcluir (a normalização) antes de concluir; se falhar, o job não conclui e o erro fica visível", async () => {
+    const r = relogioFalso();
+    const ok = repositorioEmMemoria();
+    const { transporte } = transportePaginado(1, r, 0);
+    const aoConcluir = async () => void ok.eventos.push("normalizar");
+    await executarJob(jobNovo, { transporte, repositorio: ok.repositorio, relogio: r.relogio, prazoFinal: 60_000, aoConcluir });
+    expect(ok.eventos.slice(-2)).toEqual(["normalizar", "concluir"]);
+
+    const falha = repositorioEmMemoria();
+    const resultado = await executarJob(jobNovo, {
+      transporte: transportePaginado(1, r, 0).transporte,
+      repositorio: falha.repositorio,
+      relogio: r.relogio,
+      prazoFinal: 60_000,
+      aoConcluir: async () => {
+        throw new Error("banco fora do ar");
+      },
+    });
+    expect(resultado).toBe("falhou");
+    expect(falha.eventos).not.toContain("concluir");
+    expect(falha.eventos.at(-1)).toBe("erro:definitivo:banco fora do ar");
+  });
+
+  it("se o prazo acabou depois da última página, pausa sem começar a normalização", async () => {
+    const r = relogioFalso();
+    const repo = repositorioEmMemoria();
+    // 1 página com registro + página vazia; cada chamada custa 1 s; prazo de 2 s acaba na página vazia.
+    const { transporte } = transportePaginado(1, r, 1000);
+    let normalizou = false;
+    const resultado = await executarJob(jobNovo, {
+      transporte, repositorio: repo.repositorio, relogio: r.relogio, prazoFinal: 2_000,
+      aoConcluir: async () => void (normalizou = true),
+    });
+    expect(resultado).toBe("pausado");
+    expect(normalizou).toBe(false);
+    expect(repo.eventos).not.toContain("concluir");
+  });
 });
