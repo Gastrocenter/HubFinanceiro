@@ -68,9 +68,9 @@ Correção (migration `20261126104824_repasse_por_lote`):
 - Glosa após repasse traz todos os repasses do procedimento em `detalhes.repasses`.
 - `repasse_sem_procedimento` continua por procedimento (dois lotes, uma pendência); `repasse_sumiu` passa a ser por repasse (procedimento e lote).
 - Testes: S2 (o lote refeito entra como novo e o antigo some), `planejarGravacao` (dois lotes, duas linhas), S4 (dois repasses na pendência) e o teste SQL `aplicar_mes_de_repasses` (dois lotes em meses diferentes ficam), todos vistos falhando antes da correção.
-Falta, depois do deploy: recarregar os 12 meses e rodar o S6 de novo. Perguntar à Sabrina o que significa a linha de valor 0 num segundo lote (estorno, ajuste?).
+Recarga depois do deploy (jobs 85–96, rótulo `recarga-por-lote`): os 12 meses batem com o bruto em linhas, total ao profissional, quantidade de títulos e soma dos títulos, e a segunda normalização não muda nada. No Hub: 15.427 repasses (os 444 que faltavam voltaram), 432 procedimentos com mais de um lote, nenhum repasse marcado como sumido e nenhuma pendência de repasse. O S6 também passou a esperar pelo estado dos jobs no banco (o agendador de produção pega parte deles em paralelo). Ainda perguntar à Sabrina o que significa a linha de valor 0 num segundo lote (estorno, ajuste?).
 
-O S6 continua aberto até a recarga. Falta ainda o teste da tela em produção (S7).
+Falta o teste da tela em produção (S7).
 
 Para a issue 09 (perguntar à Sabrina):
 - `nao_incluir_repasse`: "a repassar" só tira os marcados `nao_repassar`.
@@ -81,6 +81,6 @@ Para a issue 09 (perguntar à Sabrina):
 ## Critérios de aceite
 - [ ] Repasse e recebível ficam vinculados nos dois sentidos (rastreabilidade).
 - [ ] Glosa posterior em procedimento repassado gera pendência (D-V).
-- [ ] O total de repasse de cada mês bate com o ProDoctor por caminho independente (S6).
+- [x] O total de repasse de cada mês bate com o ProDoctor por caminho independente (S6).
 - [ ] Títulos por (profissional, lote) com total arredondado uma vez (D-T).
 - [ ] Tela `/repasses` testada em produção.

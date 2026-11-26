@@ -24,16 +24,22 @@ describe.skipIf(!ligado)(`carga real dos repasses de ${meses.join(", ")} (S6)`, 
 
     const criados = await enfileirarRepasses(db, empresa, meses, rotulo);
     expect(criados).toBe(meses.length);
-    const processados = [];
-    while (processados.length < meses.length) {
+    // O agendador de produção pode pegar parte dos jobs em paralelo: espera pelo estado no banco, não pelo que
+    // este processo processou.
+    const chaves = meses.map((mes) => `repasses:${empresa}:${mes}:${rotulo}`);
+    const prazo = Date.now() + 1_500_000;
+    let jobs: { id: number; estado: string }[] = [];
+    while (Date.now() < prazo) {
+      const { data, error } = await db.from("sync_jobs").select("id, estado").in("chave_idempotencia", chaves).order("id");
+      if (error) throw error;
+      jobs = data ?? [];
+      if (jobs.every((j) => j.estado === "concluido" || j.estado === "falhou")) break;
       const resumo = await processarFila({ db, prazoFinal: Date.now() + 200_000 });
-      const meus = resumo.processados.filter((p) => p.rota.endsWith("/Exportacoes/Repasses"));
-      if (resumo.processados.length === 0) break;
-      processados.push(...meus.filter((p) => p.resultado === "concluido"));
+      if (resumo.processados.length === 0) await new Promise((r) => setTimeout(r, 5_000));
     }
-    expect(processados).toHaveLength(meses.length);
+    expect(jobs.map((j) => j.estado)).toEqual(meses.map(() => "concluido"));
 
-    for (const meu of processados) {
+    for (const meu of jobs.map((j) => ({ jobId: j.id }))) {
       const { data: conferencia, error } = await db.rpc("conferir_repasse_do_job", { p_job_id: Number(meu.jobId) });
       if (error) throw error;
       const c = conferencia as Record<string, string | number>;
