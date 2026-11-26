@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { criarClienteProDoctor } from "./cliente";
 import type { Relogio } from "./limitador";
+import { ErroDeRedeProDoctor, ehFalhaPassageira } from "./retentativa";
 
 const relogioInstantaneo: Relogio = { agora: () => 0, esperar: async () => {} };
 
@@ -67,6 +68,50 @@ describe("criarClienteProDoctor", () => {
     const cliente = criarClienteProDoctor({ empresa: "sabin", ambiente, fetch: f.fn, relogio: relogioInstantaneo });
     await expect(cliente.coletar("/api/v1/LocaisProDoctor", {}, "locaisProDoctor")).resolves.toEqual([{ codigo: 1 }]);
     expect(f.pedidos).toHaveLength(3);
+  });
+
+  it("falha de rede (fetch rejeita) é passageira: tenta de novo e, se persistir, sai como ErroDeRedeProDoctor sem credencial", async () => {
+    let chamadas = 0;
+    const respostas = fetchFalso([paginaComUmLocal, paginaVazia]);
+    const instavel = (async (url: string, init: RequestInit) => {
+      if (chamadas++ === 0) throw new TypeError("fetch failed");
+      return respostas.fn(url, init);
+    }) as unknown as typeof fetch;
+    const cliente = criarClienteProDoctor({ empresa: "sabin", ambiente, fetch: instavel, relogio: relogioInstantaneo });
+    await expect(cliente.coletar("/api/v1/LocaisProDoctor", {}, "locaisProDoctor")).resolves.toEqual([{ codigo: 1 }]);
+    expect(chamadas).toBe(3);
+
+    const foraDoAr = (async () => {
+      throw new TypeError("fetch failed");
+    }) as unknown as typeof fetch;
+    const semRede = criarClienteProDoctor({ empresa: "sabin", ambiente, fetch: foraDoAr, relogio: relogioInstantaneo });
+    const erro = await semRede.coletar("/api/v1/LocaisProDoctor", {}, "locaisProDoctor").catch((e: unknown) => e);
+    expect(erro).toBeInstanceOf(ErroDeRedeProDoctor);
+    expect(ehFalhaPassageira(erro)).toBe(true);
+    expect(String((erro as Error).message)).not.toContain("chave-sabin-teste");
+  });
+
+  it("conexão que cai no meio do corpo (TypeError ao ler) também é passageira; JSON malformado não", async () => {
+    let chamadas = 0;
+    const respostas = fetchFalso([paginaComUmLocal, paginaVazia]);
+    const cortaNoMeio = (async (url: string, init: RequestInit) => {
+      if (chamadas++ > 0) return respostas.fn(url, init);
+      const corpo = new ReadableStream({ start: (c) => c.error(new TypeError("terminated")) });
+      return new Response(corpo, { status: 200 });
+    }) as unknown as typeof fetch;
+    const cliente = criarClienteProDoctor({ empresa: "sabin", ambiente, fetch: cortaNoMeio, relogio: relogioInstantaneo });
+    await expect(cliente.coletar("/api/v1/LocaisProDoctor", {}, "locaisProDoctor")).resolves.toEqual([{ codigo: 1 }]);
+    expect(chamadas).toBe(3);
+
+    let malformadas = 0;
+    const malformado = (async () => {
+      malformadas++;
+      return new Response("{não é json", { status: 200 });
+    }) as unknown as typeof fetch;
+    const comDefeito = criarClienteProDoctor({ empresa: "sabin", ambiente, fetch: malformado, relogio: relogioInstantaneo });
+    const erro = await comDefeito.coletar("/api/v1/LocaisProDoctor", {}, "locaisProDoctor").catch((e: unknown) => e);
+    expect(ehFalhaPassageira(erro)).toBe(false);
+    expect(malformadas).toBe(1);
   });
 
   it("empresa sem credencial falha antes de chamar a API, citando a variável que falta", () => {

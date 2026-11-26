@@ -2,7 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { criarClienteProDoctor } from "@/conectores/prodoctor/cliente";
 import { relogioReal, type Relogio } from "@/conectores/prodoctor/limitador";
 import type { Transporte } from "@/conectores/prodoctor/paginacao";
-import { ehJobDeCadastro, normalizarCadastrosDoJob } from "@/cadastros/normalizar";
+import { ROTA_PARA_TIPO, ehJobDeCadastro, normalizarCadastrosDoJob } from "@/cadastros/normalizar";
+import type { TipoDeCadastro } from "@/cadastros/ler-cadastros";
 import { ROTAS_DO_PLANO, type TipoDoPlano } from "@/contas/ler-plano-financeiro";
 import { ROTA_CONTAS, normalizarContasDoJob, normalizarPlanoDoJob } from "@/contas/normalizar";
 import { ROTA_PROCEDIMENTOS, normalizarProcedimentosDoJob } from "@/receita/normalizar";
@@ -12,16 +13,25 @@ import { lerTudo } from "@/lib/ler-tudo";
 import { executarJob, type Job, type ResultadoDoJob } from "./executar-job";
 import { criarRepositorioPostgres } from "./repositorio-postgres";
 
-/** Cadastros sincronizados todo dia (issue 04). Uma página só: quantidade 5000. */
+/**
+ * Cadastros sincronizados todo dia (issue 04). Uma página só: quantidade 5000.
+ * Unidades e convênios vêm todos, e o `estadoRegistro` diz quem está inativo. Usuários não trazem estado, então
+ * vêm só os ativos: quem sai da lista está inativo ou foi removido, e o Hub não sabe qual (code-review item 9).
+ */
 export const CADASTROS = [
-  { rota: "/api/v1/LocaisProDoctor", caminhoDaLista: "locaisProDoctor" },
-  { rota: "/api/v1/Usuarios", caminhoDaLista: "usuarios" },
-  { rota: "/api/v1/Convenios", caminhoDaLista: "convenios" },
+  { rota: "/api/v1/LocaisProDoctor", caminhoDaLista: "locaisProDoctor", somenteAtivos: false },
+  { rota: "/api/v1/Usuarios", caminhoDaLista: "usuarios", somenteAtivos: true },
+  { rota: "/api/v1/Convenios", caminhoDaLista: "convenios", somenteAtivos: false },
 ] as const;
+
+/** O job deste tipo de cadastro pede só os ativos? Então quem sai da lista pode estar só inativo, não sumido. */
+export function pedeSoAtivos(tipo: TipoDeCadastro): boolean {
+  return CADASTROS.some((c) => ROTA_PARA_TIPO[c.rota] === tipo && c.somenteAtivos);
+}
 
 /** Todo job de cadastro do dia: os do de-para e os do plano financeiro (que não aceitam `somenteAtivos`). */
 export const JOBS_DE_CADASTRO: { rota: string; caminhoDaLista: string; corpo: Record<string, unknown> }[] = [
-  ...CADASTROS.map((c) => ({ ...c, corpo: { quantidade: 5000, somenteAtivos: true } })),
+  ...CADASTROS.map(({ somenteAtivos, ...c }) => ({ ...c, corpo: { quantidade: 5000, somenteAtivos } })),
   ...Object.values(ROTAS_DO_PLANO).map((p) => ({ ...p, corpo: { quantidade: 5000 } })),
 ];
 

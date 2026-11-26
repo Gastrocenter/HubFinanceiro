@@ -4,6 +4,8 @@ import { exigirAcesso } from "@/lib/sessao";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
 import { lerTudo } from "@/lib/ler-tudo";
 import { carregarSugestoes, type SinaisComSugestao } from "@/cadastros/sinais";
+import { valorExibido } from "@/cadastros/sugestoes-aplicaveis";
+import { pedeSoAtivos } from "@/sync/fila";
 import { aceitarSugestoes, revisarCadastro } from "./acoes";
 
 const TIPOS = [
@@ -78,6 +80,10 @@ async function Conteudo({ busca }: { busca: Promise<Filtros> }) {
 
       {comSugestao.length > 0 && (
         <form action={aceitarSugestoes} className="mt-4 rounded border border-amber-300 bg-amber-50 p-4 text-sm">
+          {/* O que está na tela agora: a ação aplica só isto, e só se nada mudou (code-review item 6). */}
+          {comSugestao.map((l) => (
+            <input key={l.id} type="hidden" name="exibida" value={valorExibido(l.id, sugestoes.get(l.id)!.sugestao!)} />
+          ))}
           <p>
             O Hub tem sugestão para <strong>{comSugestao.length}</strong> profissionais a revisar
             ({comSugestao.filter((l) => sugestoes.get(l.id)?.sugestao === "medico").length} médicos,{" "}
@@ -109,7 +115,10 @@ async function Conteudo({ busca }: { busca: Promise<Filtros> }) {
                 <td className="py-2 pr-4">{l.nome_origem}</td>
                 <td className="pr-4 font-mono text-xs text-neutral-600">{l.empresa}:{l.codigo_origem}</td>
                 <td className="pr-4">
-                  {!l.visto_na_ultima_sync ? (
+                  {!l.visto_na_ultima_sync && pedeSoAtivos(tipo) ? (
+                    // O job pede só os ativos (o ProDoctor não diz o estado do usuário): fora da lista é inativo ou removido.
+                    <span className="rounded bg-neutral-200 px-2 py-0.5 text-xs">Inativo ou removido no ProDoctor</span>
+                  ) : !l.visto_na_ultima_sync ? (
                     <span className="rounded bg-red-100 px-2 py-0.5 text-xs text-red-800">Sumiu do ProDoctor</span>
                   ) : !l.ativo ? (
                     <span className="rounded bg-neutral-200 px-2 py-0.5 text-xs">Inativo</span>

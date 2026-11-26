@@ -36,7 +36,23 @@ Em `src/proxy.ts`, `startsWith("/login")` torna pública qualquer rota que comec
 - **Correção:** `pathname === rota || pathname.startsWith(rota + "/")`, e ancorar as exclusões do `matcher` com `/` ou `$`.
 - **Teste:** função pura `ehRotaPublica(pathname)` com os casos de borda.
 
+## Estado (26/11/2026)
+Seams confirmadas: S1 item 5 (cliente e executarJob), S2 item 6 (`sugestoesAplicaveis`), S3 item 7 (SQL em rollback), S4 item 8 (`carregarSugestoes` com 2.500 linhas), S5 item 9 (contrato real), S6 item 10 (`ehRotaSemSessao`). Cada teste foi escrito e visto falhar antes da correção.
+
+- **Item 7:** migration `20261126161651_issue_10_divida_tecnica`. A linha gravada (em qualquer mês) ou que voltou fecha a `procedimento_sumiu` aberta da mesma empresa e chave, e o fechamento entra em `pendencias_resolvidas` na auditoria. `supabase/tests/procedimento_que_muda_de_mes.sql` deu TESTE_OK no banco real; os testes SQL antigos da função também.
+- **Item 9, fato da API real (sonda só com contagens):** unidades e convênios trazem `estadoRegistro` (convênios: 128 ativos, 174 com estado 1). `Usuarios` não traz estado nenhum: com `somenteAtivos: false` vêm 142 em vez de 50, sem como saber quem está inativo. Pedir todos marcaria 92 inativos como ativos.
+- **Item 9, decisão (D-1, "selo honesto"):** unidades e convênios pedem todos e o `estadoRegistro` decide; profissionais continuam só ativos, e quem sai da lista ganha o selo "Inativo ou removido no ProDoctor" (sem o vermelho de "sumiu"). O contrato real falha se um dia o ProDoctor passar a mandar o estado do usuário.
+- **Efeito do item 9 na próxima sync:** os 174 convênios inativos entram no de-para como "a revisar", com o selo "Inativo". Não abrem pendência.
+- **Item 10:** o `matcher` exclui só os arquivos do Next (`_next/static/`, `_next/image`, `favicon.ico`), conferido na regex compilada do build. Login, ilustrações e agendamentos ficam em `ehRotaSemSessao`; ilustrações e agendamentos saem do proxy antes de tocar a sessão, como antes.
+
+- **Revisão (/code-review, dois eixos):** sem violação de padrão documentado. Corrigidos, com teste vermelho antes:
+  - item 5: conexão que cai no meio do corpo (`TypeError` ao ler o JSON) voltou a ser passageira; JSON malformado segue definitivo;
+  - item 7: com os meses em paralelo, o "sumiram" de um mês podia chegar depois que outro mês levou a linha e abrir pendência falsa. Migration `20261126163213_issue_10_sumiu_so_o_que_marcou`: a pendência só abre para a linha que o update marcou de fato, e o "voltaram" só fecha a da linha que voltou de fato.
+
+  Ajustes menores: `.order("de_para_id")` também no PostgREST (item 8); marcações (`MARCACOES`) numa fonte só; o selo da tela lê de `CADASTROS` (`pedeSoAtivos`) em vez de deduzir pelo tipo.
+- **Dívida registrada (não corrigida):** a chave `codigo_local:conta:linha` é montada à mão no SQL e no TS; os comentários "code-review item N" apontam para esta issue.
+
 ## Critérios de aceite
-- [ ] Cada item com teste que falhou antes da correção.
+- [x] Cada item com teste que falhou antes da correção.
 - [ ] `npm run check` verde no CI.
-- [ ] Itens 7 e 9 conferidos contra o banco/API reais.
+- [x] Itens 7 e 9 conferidos contra o banco/API reais.

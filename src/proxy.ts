@@ -1,14 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-
-/** Rotas abertas sem login. Todo o resto exige sessão. */
-const ROTAS_PUBLICAS = ["/login"];
+import { ehRotaSemSessao, ficaForaDaSessao } from "@/lib/rota-sem-sessao";
 
 /**
  * Renova o token de sessão a cada requisição e manda quem não tem sessão para o login (307).
  * É só uma checagem prévia: a decisão por perfil fica nas páginas (exigirAcesso).
  */
 export async function proxy(request: NextRequest) {
+  if (ficaForaDaSessao(request.nextUrl.pathname)) return NextResponse.next();
   let resposta = NextResponse.next({ request });
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,8 +25,7 @@ export async function proxy(request: NextRequest) {
   );
   const { data } = await supabase.auth.getUser();
 
-  const publica = ROTAS_PUBLICAS.some((rota) => request.nextUrl.pathname.startsWith(rota));
-  if (!data.user && !publica) {
+  if (!data.user && !ehRotaSemSessao(request.nextUrl.pathname)) {
     const login = request.nextUrl.clone();
     login.pathname = "/login";
     login.search = "";
@@ -37,6 +35,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Agendamentos ficam fora: o agendador não tem sessão de usuário.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|illustrations|api/agendamentos).*)"],
+  // Só os arquivos do próprio Next ficam fora, ancorados com "/" ou fim. As exceções (login, ilustrações,
+  // agendamentos) ficam em ehRotaSemSessao, testada (code-review item 10).
+  matcher: ["/((?!_next/static/|_next/image(?:/|$)|favicon\\.ico$).*)"],
 };

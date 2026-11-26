@@ -105,6 +105,22 @@ describe("executarJob", () => {
     }
   });
 
+  it("TypeError de programação (no parser ou na normalização) é definitivo, não falha de rede", async () => {
+    const r = relogioFalso();
+    const repo = repositorioEmMemoria();
+    const resultado = await executarJob(jobNovo, {
+      transporte: transportePaginado(1, r, 0).transporte,
+      repositorio: repo.repositorio,
+      relogio: r.relogio,
+      prazoFinal: 60_000,
+      aoConcluir: async () => {
+        throw new TypeError("Cannot read properties of undefined (reading 'codigo')");
+      },
+    });
+    expect(resultado).toBe("falhou");
+    expect(repo.eventos.at(-1)).toMatch(/^erro:definitivo:Cannot read/);
+  });
+
   it("falha como definitivo se passar do teto de páginas (API ignorando a paginação entre rodadas)", async () => {
     const r = relogioFalso();
     const { transporte, paginasPedidas } = transportePaginado(Infinity, r, 0);

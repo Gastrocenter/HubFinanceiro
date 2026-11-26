@@ -28,7 +28,7 @@ export function lerCadastros(rota: string, pagina: unknown): RegistroDeOrigem[] 
     const { codigo, nome, estadoRegistro, tipoConvenio } = r as Bruto;
     if (!Number.isInteger(codigo)) throw new Error(`${rota}: registro ${i} sem código inteiro.`);
     if (typeof nome !== "string" || !nome.trim()) throw new Error(`${rota}: registro ${i} (código ${codigo}) sem nome.`);
-    // Usuários não trazem estadoRegistro; vêm só os ativos (somenteAtivos).
+    // Usuários não trazem estadoRegistro: o job pede só os ativos (ver CADASTROS em sync/fila.ts).
     const registro: RegistroDeOrigem = { tipo, codigoOrigem: String(codigo), nome, ativo: (estadoRegistro ?? 0) === 0 };
     if (tipo === "convenio") registro.tipoConvenio = tipoConvenio;
     return registro;

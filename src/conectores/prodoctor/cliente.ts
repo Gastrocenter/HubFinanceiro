@@ -1,6 +1,6 @@
 import { criarLimitador, relogioReal, type Relogio } from "./limitador";
 import { coletarTodasPaginas, type Transporte } from "./paginacao";
-import { ErroHttpProDoctor, comRetentativas } from "./retentativa";
+import { ErroDeRedeProDoctor, ErroHttpProDoctor, comRetentativas } from "./retentativa";
 
 const URL_BASE = "https://open-api.prodoctor.net";
 
@@ -39,6 +39,8 @@ export function criarClienteProDoctor({
     comRetentativas(
       async () => {
         await aguardarVez();
+        // Só a falha de transporte vira erro de rede (passageiro): o fetch que rejeita, ou a conexão que cai no meio
+        // do corpo (TypeError ao ler). JSON malformado (SyntaxError) e erro de programação seguem definitivos.
         const resposta = await fazerFetch(`${URL_BASE}${rota}`, {
           method: "POST",
           headers: {
@@ -51,11 +53,15 @@ export function criarClienteProDoctor({
             "X-APITIMEZONENAME": "America/Sao_Paulo",
           },
           body: JSON.stringify(corpo),
+        }).catch((causa: unknown) => {
+          throw new ErroDeRedeProDoctor(rota, causa);
         });
         if (!resposta.ok) {
           throw new ErroHttpProDoctor(resposta.status, rota, mascarar(await lerMensagem(resposta), [chave, senha]));
         }
-        return resposta.json();
+        return resposta.json().catch((causa: unknown) => {
+          throw causa instanceof TypeError ? new ErroDeRedeProDoctor(rota, causa) : causa;
+        });
       },
       { relogio },
     );

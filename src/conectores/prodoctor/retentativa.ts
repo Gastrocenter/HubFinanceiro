@@ -12,10 +12,24 @@ export class ErroHttpProDoctor extends Error {
   }
 }
 
-/** Passageiro: limite de taxa (429), erro do servidor (5xx) ou falha de rede (sem status). */
+/** O pedido nem chegou ao ProDoctor (DNS, conexão, timeout). Só o cliente lança, embrulhando a falha do `fetch`. */
+export class ErroDeRedeProDoctor extends Error {
+  constructor(
+    readonly rota: string,
+    causa: unknown,
+  ) {
+    super(`Falha de rede ao chamar o ProDoctor em ${rota}: ${causa instanceof Error ? causa.message : String(causa)}`, { cause: causa });
+    this.name = "ErroDeRedeProDoctor";
+  }
+}
+
+/**
+ * Passageiro: limite de taxa (429), erro do servidor (5xx) ou falha de rede. Qualquer outro erro, inclusive um
+ * `TypeError` de programação no parser ou na normalização, é definitivo: refazer não muda o resultado.
+ */
 export function ehFalhaPassageira(erro: unknown): boolean {
   if (erro instanceof ErroHttpProDoctor) return erro.status === 429 || erro.status >= 500;
-  return erro instanceof TypeError; // fetch lança TypeError em falha de rede
+  return erro instanceof ErroDeRedeProDoctor;
 }
 
 export type OpcoesDeRetentativa = {

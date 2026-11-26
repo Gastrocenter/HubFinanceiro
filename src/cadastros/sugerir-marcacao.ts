@@ -1,6 +1,10 @@
 export type SinaisDoProfissional = { especialidades: readonly string[]; procedimentos: number };
 
-export type Sugestao = { sugestao: "medico" | "nao_medico" | null; motivo: string };
+/** As marcações possíveis de um profissional (D-J). Fonte única: o tipo e a leitura do formulário saem daqui. */
+export const MARCACOES = ["medico", "nao_medico"] as const;
+export type Marcacao = (typeof MARCACOES)[number];
+
+export type Sugestao = { sugestao: Marcacao | null; motivo: string };
 
 const ehMedica = (especialidade: string) => especialidade.startsWith("Médico");
 

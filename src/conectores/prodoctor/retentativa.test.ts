@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ErroHttpProDoctor, comRetentativas } from "./retentativa";
+import { ErroDeRedeProDoctor, ErroHttpProDoctor, comRetentativas } from "./retentativa";
 import type { Relogio } from "./limitador";
 
 function relogioFalso() {
@@ -30,7 +30,7 @@ describe("comRetentativas", () => {
 
   it("trata falha de rede e 429 como passageiras", async () => {
     const r = relogioFalso();
-    const f = falhaComEssesErros([new TypeError("fetch failed"), new ErroHttpProDoctor(429, "/x")]);
+    const f = falhaComEssesErros([new ErroDeRedeProDoctor("/x", new TypeError("fetch failed")), new ErroHttpProDoctor(429, "/x")]);
     await expect(comRetentativas(f.fn, { relogio: r.relogio })).resolves.toBe("ok");
     expect(f.chamadas()).toBe(3);
   });
