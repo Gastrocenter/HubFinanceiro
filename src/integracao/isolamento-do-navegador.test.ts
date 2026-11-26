@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const chavePublica = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-const TABELAS = ["perfis_usuarios", "auditoria", "sync_jobs", "prodoctor_payload_bruto", "unidades", "profissionais", "convenios", "de_para", "recebiveis", "pendencias", "repasses", "titulos_repasse"] as const;
+const TABELAS = ["perfis_usuarios", "auditoria", "sync_jobs", "prodoctor_payload_bruto", "unidades", "profissionais", "convenios", "de_para", "recebiveis", "pendencias", "repasses", "titulos_repasse", "plano_financeiro", "contas_pagar_receber"] as const;
 /** Corpos com colunas reais: assim a recusa só pode ser de permissão, não de pedido malformado. */
 const CORPO_VALIDO: Record<(typeof TABELAS)[number], Record<string, unknown>> = {
   perfis_usuarios: { usuario_id: "00000000-0000-0000-0000-000000000000", perfil: "admin" },
@@ -18,6 +18,8 @@ const CORPO_VALIDO: Record<(typeof TABELAS)[number], Record<string, unknown>> = 
   pendencias: { tipo: "x", empresa: "X", referencia: "x", descricao: "x" },
   repasses: { empresa: "X", codigo_local: "1", conta: "1", linha: "1", mes: "2026-10", numero_repasse: "1", data_repasse: "2026-10-01", data: "2026-09-01" },
   titulos_repasse: { empresa: "X", mes: "2026-10", numero_repasse: "1", nome_profissional_origem: "x", data_repasse: "2026-10-01", linhas: 1, total_exato: "1", total_centavos: 100 },
+  plano_financeiro: { empresa: "X", tipo: "conta_contabil", codigo: "1", nome: "x" },
+  contas_pagar_receber: { empresa: "X", codigo_local: "1", numero: "1", mes: "2026-10", data_inclusao: "2026-10-01" },
 };
 
 /** Funções com argumentos reais, pelo mesmo motivo. */
@@ -37,6 +39,14 @@ const FUNCOES: Record<string, Record<string, unknown>> = {
   meses_com_repasse: {},
   integridade_das_exportacoes: {},
   resolver_pendencia: { p_id: 1, p_usuario: "00000000-0000-0000-0000-000000000000", p_justificativa: "x" },
+  aplicar_plano_financeiro: { p_empresa: "X", p_tipo: "conta_contabil", p_itens: [] },
+  aplicar_mes_de_contas: { p_empresa: "X", p_mes: "2026-10", p_diferenca: {} },
+  conferir_contas_do_job: { p_job_id: 1 },
+  resumo_contas: { p_mes: "2026-10" },
+  contas_a_pagar_do_mes: { p_mes: "2026-10" },
+  meses_com_contas: {},
+  totais_contas: { p_mes: "2026-10" },
+  natureza_da_conta: { p_situacao: "PAGAR" },
   sinais_dos_profissionais: {},
   expurgar_payload_de_exportacao: { p_dias: 120 },
   revisar_cadastro: { p_de_para_id: 1, p_usuario: "00000000-0000-0000-0000-000000000000", p_eh_medico: true },

@@ -9,6 +9,7 @@ import { lerTudo } from "@/lib/ler-tudo";
 import { exigirAcesso } from "@/lib/sessao";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
 import { ROTA_REPASSES } from "@/repasse/normalizar";
+import { ROTA_CONTAS } from "@/contas/normalizar";
 import { empresasConfiguradas } from "@/sync/empresas";
 import { resolverPendencia } from "./acoes";
 
@@ -55,7 +56,7 @@ const SELECT_PENDENCIAS = "id, tipo, empresa, referencia, descricao, detalhes, e
 
 const dataHora = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }) : "nunca";
-const tipoDaExportacao = (rota: string) => (rota === ROTA_REPASSES ? "Repasses" : "Receita");
+const tipoDaExportacao = (rota: string) => (rota === ROTA_REPASSES ? "Repasses" : rota === ROTA_CONTAS ? "Contas a pagar/receber" : "Receita");
 
 async function Conteudo({ busca }: { busca: Promise<{ categoria?: string; estado?: string }> }) {
   const sessao = await exigirAcesso("ver_conferencia");

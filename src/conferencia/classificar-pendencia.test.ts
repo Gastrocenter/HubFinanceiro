@@ -15,6 +15,17 @@ describe("classificarPendencia", () => {
     });
   });
 
+  it("conta a pagar/receber que sumiu é 'excluído' e aponta para as contas do mês de vencimento (issue 08b)", () => {
+    expect(
+      classificarPendencia({ tipo: "conta_sumiu", referencia: "1:52001", detalhes: { mes: "2026-10", vencimento: "2026-11-05" } }),
+    ).toEqual({
+      categoria: "excluido",
+      origem: { texto: "Unidade 1, conta a pagar/receber nº 52001", link: "/contas?mes=2026-11" },
+      resolveAMao: true,
+    });
+    expect(classificarPendencia({ tipo: "conta_sumiu", referencia: "1:52001", detalhes: { mes: "2026-10" } }).origem.link).toBe("/contas");
+  });
+
   it("repasse sem procedimento aponta para o lote no mês do repasse", () => {
     expect(
       classificarPendencia({
@@ -68,7 +79,7 @@ describe("classificarPendencia", () => {
 
   it("todo tipo que o Hub cria tem tratamento próprio (nenhum cai em 'outra')", () => {
     const tipos = [
-      "procedimento_sumiu", "repasse_sumiu", "repasse_sem_procedimento", "glosa_apos_repasse",
+      "procedimento_sumiu", "repasse_sumiu", "repasse_sem_procedimento", "glosa_apos_repasse", "conta_sumiu",
       "unidade_sem_par", "profissional_sem_par", "profissional_ambiguo", "convenio_sem_par", "convenio_ambiguo",
     ];
     for (const tipo of tipos) {

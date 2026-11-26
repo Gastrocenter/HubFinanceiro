@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { rotuloDoMes } from "@/dominio/rotulo-do-mes";
+import { formatarData as dataBr } from "@/dominio/formatar-data";
 import { formatarCentavos, formatarReais } from "@/dominio/formatar-reais";
 import { exigirAcesso } from "@/lib/sessao";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
@@ -27,7 +28,6 @@ type ARepassar = {
   mes_mais_antigo: string;
 };
 
-const dataBr = (iso: string | null) => (iso ? iso.split("-").reverse().join("/") : "—");
 
 function Nome({ nome, id, ehMedico }: { nome: string; id: number | null; ehMedico: boolean | null }) {
   return (

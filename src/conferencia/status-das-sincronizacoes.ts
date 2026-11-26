@@ -1,5 +1,7 @@
 import { ROTA_PROCEDIMENTOS } from "@/receita/normalizar";
 import { ROTA_REPASSES } from "@/repasse/normalizar";
+import { ROTA_CONTAS } from "@/contas/normalizar";
+import { ROTAS_DO_PLANO } from "@/contas/ler-plano-financeiro";
 
 export type JobDaFila = {
   empresa: string;
@@ -25,6 +27,9 @@ export type StatusDaRota = {
 const NOMES: Record<string, string> = {
   [ROTA_PROCEDIMENTOS]: "Procedimentos",
   [ROTA_REPASSES]: "Repasses",
+  [ROTA_CONTAS]: "Contas a pagar/receber",
+  [ROTAS_DO_PLANO.grupo_receita_despesa.rota]: "Grupos de receita/despesa",
+  [ROTAS_DO_PLANO.conta_contabil.rota]: "Contas contábeis",
   "/api/v1/Usuarios": "Profissionais",
   "/api/v1/Convenios": "Convênios",
   "/api/v1/LocaisProDoctor": "Unidades",

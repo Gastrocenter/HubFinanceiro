@@ -35,6 +35,15 @@ export function classificarPendencia({ tipo, referencia, detalhes }: PendenciaDo
   switch (tipo) {
     case "procedimento_sumiu":
       return { categoria: "excluido", origem: { texto: procedimento(referencia), link: `/receita?mes=${mes}` }, resolveAMao: true };
+    case "conta_sumiu": {
+      const [unidade, numero] = referencia.split(":");
+      const mesDoVencimento = comoTexto(detalhes.vencimento).slice(0, 7);
+      return {
+        categoria: "excluido",
+        origem: { texto: `Unidade ${unidade}, conta a pagar/receber nº ${numero}`, link: mesDoVencimento ? `/contas?mes=${mesDoVencimento}` : "/contas" },
+        resolveAMao: true,
+      };
+    }
     case "repasse_sumiu": {
       const lote = referencia.split(":")[3];
       return {

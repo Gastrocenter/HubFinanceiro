@@ -19,6 +19,9 @@ async function Conteudo() {
         {temPermissao(sessao.perfis, "ver_repasse") && (
           <Link href="/repasses" className="underline">Repasse ao profissional</Link>
         )}
+        {temPermissao(sessao.perfis, "ver_contas") && (
+          <Link href="/contas" className="underline">Contas a pagar e a receber</Link>
+        )}
         {temPermissao(sessao.perfis, "ver_conferencia") && (
           <Link href="/conferencia" className="underline">Conferência (pendências e sincronizações)</Link>
         )}

@@ -3,6 +3,8 @@ import { criarClienteProDoctor } from "@/conectores/prodoctor/cliente";
 import { relogioReal, type Relogio } from "@/conectores/prodoctor/limitador";
 import type { Transporte } from "@/conectores/prodoctor/paginacao";
 import { ehJobDeCadastro, normalizarCadastrosDoJob } from "@/cadastros/normalizar";
+import { ROTAS_DO_PLANO, type TipoDoPlano } from "@/contas/ler-plano-financeiro";
+import { ROTA_CONTAS, normalizarContasDoJob, normalizarPlanoDoJob } from "@/contas/normalizar";
 import { ROTA_PROCEDIMENTOS, normalizarProcedimentosDoJob } from "@/receita/normalizar";
 import { periodoDoMes } from "@/receita/planejar-exportacoes";
 import { ROTA_REPASSES, normalizarRepassesDoJob } from "@/repasse/normalizar";
@@ -17,14 +19,23 @@ export const CADASTROS = [
   { rota: "/api/v1/Convenios", caminhoDaLista: "convenios" },
 ] as const;
 
-/** Cria os jobs de cadastro do dia. Idempotente: rodar duas vezes no mesmo dia não duplica. */
+/** Todo job de cadastro do dia: os do de-para e os do plano financeiro (que não aceitam `somenteAtivos`). */
+export const JOBS_DE_CADASTRO: { rota: string; caminhoDaLista: string; corpo: Record<string, unknown> }[] = [
+  ...CADASTROS.map((c) => ({ ...c, corpo: { quantidade: 5000, somenteAtivos: true } })),
+  ...Object.values(ROTAS_DO_PLANO).map((p) => ({ ...p, corpo: { quantidade: 5000 } })),
+];
+
+/**
+ * Cria os jobs de cadastro do dia, com o plano financeiro (D-4 da issue 08b: grupos de receita/despesa e contas
+ * contábeis, filtro obrigatório da exportação de contas; todos, ativos ou não). Idempotente no mesmo dia.
+ */
 export async function enfileirarCadastros(db: SupabaseClient, empresas: string[], dia: string, sufixo = "") {
   const linhas = empresas.flatMap((empresa) =>
-    CADASTROS.map((c) => ({
+    JOBS_DE_CADASTRO.map((c) => ({
       empresa,
       rota: c.rota,
       caminho_da_lista: c.caminhoDaLista,
-      corpo: { quantidade: 5000, somenteAtivos: true },
+      corpo: c.corpo,
       chave_idempotencia: `cadastros:${empresa}:${c.rota}:${dia}${sufixo}`,
     })),
   );
@@ -40,7 +51,15 @@ export async function enfileirarCadastros(db: SupabaseClient, empresas: string[]
  * Cria um job de exportação por mês. Os filtros obrigatórios da API vêm dos códigos do de-para.
  * `rotulo` vai na chave: "AAAA-MM-DD" (janela diária) ou "carga-inicial" — rodar de novo não duplica.
  */
-async function enfileirarExportacao(db: SupabaseClient, tipo: "procedimentos" | "repasses", rota: string, empresa: string, meses: string[], rotulo: string) {
+async function enfileirarExportacao(
+  db: SupabaseClient,
+  tipo: "procedimentos" | "repasses" | "contas",
+  rota: string,
+  empresa: string,
+  meses: string[],
+  rotulo: string,
+  extra: Record<string, unknown> = {},
+) {
   const origens = await lerTudo(
     (de, ate) => db.from("de_para").select("tipo, codigo_origem").eq("empresa", empresa).order("id").range(de, ate),
     `ler de-para de ${empresa}`,
@@ -56,7 +75,7 @@ async function enfileirarExportacao(db: SupabaseClient, tipo: "procedimentos" | 
     empresa,
     rota,
     caminho_da_lista: "exportacao.registros",
-    corpo: { periodo: periodoDoMes(mes), ...filtros },
+    corpo: { periodo: periodoDoMes(mes), ...filtros, ...extra },
     chave_idempotencia: `${tipo}:${empresa}:${mes}:${rotulo}`,
   }));
   const { data, error } = await db.from("sync_jobs").upsert(linhas, { onConflict: "chave_idempotencia", ignoreDuplicates: true }).select("id");
@@ -72,10 +91,33 @@ export const enfileirarProcedimentos = (db: SupabaseClient, empresa: string, mes
 export const enfileirarRepasses = (db: SupabaseClient, empresa: string, meses: string[], rotulo: string) =>
   enfileirarExportacao(db, "repasses", ROTA_REPASSES, empresa, meses, rotulo);
 
+/**
+ * Um job de contas a pagar/receber por mês de INCLUSÃO (issue 08b, D-2), os quatro tipos juntos (D-5). O filtro
+ * de grupos e contas contábeis vem do plano financeiro; sem ele a API recusa, então espera o cadastro do dia.
+ */
+export async function enfileirarContas(db: SupabaseClient, empresa: string, meses: string[], rotulo: string) {
+  const plano = await lerTudo(
+    (de, ate) => db.from("plano_financeiro").select("tipo, codigo").eq("empresa", empresa).order("id").range(de, ate),
+    `ler plano financeiro de ${empresa}`,
+  );
+  const codigos = (t: TipoDoPlano) => plano.filter((p) => p.tipo === t).map((p) => ({ codigo: p.codigo as string }));
+  const grupos = codigos("grupo_receita_despesa");
+  const contasContabeis = codigos("conta_contabil");
+  if (grupos.length === 0 || contasContabeis.length === 0) return 0;
+  return enfileirarExportacao(db, "contas", ROTA_CONTAS, empresa, meses, rotulo, {
+    tipoPeriodo: 0,
+    tipos: [0, 1, 2, 3],
+    GruposReceitasDespesas: grupos,
+    ContasContabeis: contasContabeis,
+  });
+}
+
 /** Normalização de cada rota de exportação, rodada no `aoConcluir` (D-M). */
 const NORMALIZAR_EXPORTACAO: Record<string, (db: SupabaseClient, job: Job) => Promise<unknown>> = {
   [ROTA_PROCEDIMENTOS]: normalizarProcedimentosDoJob,
   [ROTA_REPASSES]: normalizarRepassesDoJob,
+  [ROTA_CONTAS]: normalizarContasDoJob,
+  ...Object.fromEntries(Object.values(ROTAS_DO_PLANO).map((p) => [p.rota, normalizarPlanoDoJob])),
 };
 
 export type ResumoDaRodada = { processados: { jobId: string; empresa: string; rota: string; resultado: ResultadoDoJob }[] };

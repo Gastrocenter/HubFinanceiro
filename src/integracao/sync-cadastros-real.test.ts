@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import { empresasConfiguradas } from "@/sync/empresas";
-import { CADASTROS, enfileirarCadastros, processarFila } from "@/sync/fila";
+import { JOBS_DE_CADASTRO, enfileirarCadastros, processarFila } from "@/sync/fila";
 import { criarRepositorioPostgres } from "@/sync/repositorio-postgres";
 
 /**
@@ -20,15 +20,15 @@ describe.skipIf(!ligado)("sincronização real dos cadastros (S4)", () => {
     const sufixo = `:teste-s4:${Date.now()}`;
     const dia = new Date().toISOString().slice(0, 10);
 
-    expect(await enfileirarCadastros(db, [empresa], dia, sufixo)).toBe(3);
+    expect(await enfileirarCadastros(db, [empresa], dia, sufixo)).toBe(JOBS_DE_CADASTRO.length);
     expect(await enfileirarCadastros(db, [empresa], dia, sufixo)).toBe(0); // idempotente
 
     const resumo = await processarFila({ db, prazoFinal: Date.now() + 120_000 });
     const meus = resumo.processados.filter((p) => p.empresa === empresa);
-    expect(meus.map((p) => p.resultado)).toEqual(["concluido", "concluido", "concluido"]);
+    expect(meus.map((p) => p.resultado)).toEqual(JOBS_DE_CADASTRO.map(() => "concluido"));
 
     for (const { jobId, rota } of meus) {
-      const cadastro = CADASTROS.find((c) => c.rota === rota)!;
+      const cadastro = JOBS_DE_CADASTRO.find((c) => c.rota === rota)!;
       const { data: paginas } = await db.from("prodoctor_payload_bruto").select("pagina, payload").eq("job_id", Number(jobId));
       expect(paginas?.map((p) => p.pagina), rota).toEqual([1]);
       const registros = (paginas![0].payload as { payload: Record<string, unknown[]> }).payload[cadastro.caminhoDaLista];
