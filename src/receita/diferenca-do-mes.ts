@@ -16,7 +16,19 @@ export function chaveDoProcedimento(p: Pick<RegistroDeProcedimento, "codigoLocal
 }
 
 /** Compara o que o Hub tem de um mês com o que veio do ProDoctor para o mesmo mês (escopo inteiro do mês). */
-export function diferencaDoMes(atuais: ProcedimentoAtual[], vindos: RegistroDeProcedimento[]): DiferencaDoMes {
+/** Uma linha por chave, a última que veio: a paginação pode repetir um registro quando os dados mudam durante a busca. */
+function semRepetidos(vindos: RegistroDeProcedimento[]): RegistroDeProcedimento[] {
+  const porChave = new Map<string, RegistroDeProcedimento>();
+  for (const v of vindos) {
+    const chave = chaveDoProcedimento(v);
+    porChave.delete(chave);
+    porChave.set(chave, v);
+  }
+  return [...porChave.values()];
+}
+
+export function diferencaDoMes(atuais: ProcedimentoAtual[], vindosComRepetidos: RegistroDeProcedimento[]): DiferencaDoMes {
+  const vindos = semRepetidos(vindosComRepetidos);
   // Proteção: mês com procedimentos que de repente vem vazio é quase certamente falha, não exclusão em massa.
   if (vindos.length === 0 && atuais.some((a) => a.vistoNaUltimaSync)) {
     throw new Error("Mês veio vazio do ProDoctor, mas o Hub já tem procedimentos nele: diferença recusada.");

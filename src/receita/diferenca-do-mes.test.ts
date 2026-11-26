@@ -38,6 +38,14 @@ describe("diferencaDoMes", () => {
     expect(diferenca).toEqual({ ...vazio, sumiram: [chaveDoProcedimento(b)], voltaram: [chaveDoProcedimento(c)] });
   });
 
+  it("procedimento repetido entre páginas entra uma vez só, com a última versão", () => {
+    const primeira = proc("A", { valorGlosa: null });
+    const ultima = proc("A", { valorGlosa: "10" });
+    const diferenca = diferencaDoMes([], [primeira, proc("B"), ultima]);
+    expect(diferenca.novos.map(chaveDoProcedimento)).toEqual([chaveDoProcedimento(proc("B")), chaveDoProcedimento(ultima)]);
+    expect(diferenca.novos.find((p) => p.conta === "A")?.valorGlosa).toBe("10");
+  });
+
   it("recusa mês que veio vazio quando o Hub já tem procedimentos nele", () => {
     expect(() => diferencaDoMes([atual(proc("A"))], [])).toThrow(/vazio/);
     expect(diferencaDoMes([], [])).toEqual(vazio);
