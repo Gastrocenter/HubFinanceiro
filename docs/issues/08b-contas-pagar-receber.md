@@ -1,7 +1,5 @@
 # 08b — Contas a pagar/receber do ProDoctor (só leitura)
 
-Status: ready-for-agent
-
 **Tipo:** AFK + verificação manual · **Depende de:** 08 · **Origem:** separada da issue 08 em 26/11/2026 (D-A)
 
 ## Escopo
@@ -41,9 +39,12 @@ Dívida registrada (não corrigida): o mapeamento rota → nome/normalizador/tip
 
 Carga de 12 meses (S6) em 26/11/2026, rótulo `carga-inicial`: o plano financeiro primeiro (408 itens), depois as contas. Os 12 meses (dez/2025 a nov/2026) batem com o bruto em linhas, crédito, débito e efetivado, sem conta de outro mês de inclusão, e a segunda normalização não muda nada. No Hub: 13.659 contas, nenhuma fora da lista de tipos com nome guardando nome, histórico ou documento, nenhuma pendência `conta_sumiu`. Integridade do painel: 36 de 36 meses (receita, repasse e contas). Com o plano gravado, o agendamento das 05:00 passa a criar os jobs de contas.
 
-Falta o teste da tela em produção (S7).
+Tela testada em produção em 26/11/2026 (S7).
+
+**Fechada em 26/11/2026.** Contas a pagar/receber em produção, só leitura; 12 de 12 meses batem com o ProDoctor.
+Limite conhecido: a sincronização lê 12 meses por data de inclusão, então uma conta incluída há mais de 12 meses não aparece na tela por vencimento.
 
 ## Critérios de aceite
 - [x] Contas a pagar e a receber de um mês batem com o ProDoctor por caminho independente.
 - [x] Nenhum dado de paciente gravado (teste de vazamento).
-- [ ] Tela só de leitura testada em produção.
+- [x] Tela só de leitura testada em produção.
