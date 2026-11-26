@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "vitest run --project unitarios",
     "test:integracao": "vitest run --project integracao",
-    "typecheck": "tsc --noEmit --incremental false",
+    "typecheck": "next typegen && tsc --noEmit --incremental false",
     "check": "npm run typecheck && npm run lint && npm test"
   },
   "dependencies": {
