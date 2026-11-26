@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { decidirAcesso, type Sessao } from "@/dominio/acesso";
 import type { Acao, Perfil } from "@/dominio/permissoes";
@@ -7,7 +8,11 @@ import { criarClienteServidor } from "./supabase/servidor";
 
 export type SessaoComEmail = Sessao & { email: string };
 
-export async function carregarSessao(): Promise<SessaoComEmail | null> {
+/**
+ * Uma leitura por requisição: o layout do Hub (menu) e a página (exigirAcesso) dividem o mesmo resultado.
+ * `cache` do React vale só dentro da requisição; não guarda sessão entre usuários.
+ */
+export const carregarSessao = cache(async (): Promise<SessaoComEmail | null> => {
   const supabase = await criarClienteServidor();
   // getUser valida o token no servidor do Supabase; não confiar só no cookie.
   const { data } = await supabase.auth.getUser();
@@ -22,7 +27,7 @@ export async function carregarSessao(): Promise<SessaoComEmail | null> {
 
   const perfis = (linhas ?? []).map((l) => l.perfil as Perfil);
   return { usuarioId: data.user.id, email: data.user.email ?? "", perfis, ativo: perfis.length > 0 };
-}
+});
 
 /** Guard das páginas: devolve a sessão ou redireciona. A decisão vem da regra testada em dominio/acesso. */
 export async function exigirAcesso(acao: Acao): Promise<SessaoComEmail> {
