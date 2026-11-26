@@ -17,4 +17,4 @@ Feito: leitura dos cadastros (S1), reconciliação pura com proteção contra ca
 
 Descoberta: as exportações referenciam profissional e convênio **pelo nome**, não pelo código (só a unidade vem com código). Hoje 100% dos nomes batem com os cadastros, sem homônimos. O casamento por nome entra na issue 06 (D-I).
 
-Falta: verificação manual da tela em produção (S4).
+**Fechada em 26/11/2026.** Tela testada em produção: confirmação da unidade gravada e auditada (`cadastro_revisado` com o usuário). A marcação de médico foi coberta pelo teste SQL `revisar_cadastro.sql`, mas ainda não foi clicada em produção. Os 50 profissionais e 128 convênios seguem a revisar, por quem conhece a clínica.
