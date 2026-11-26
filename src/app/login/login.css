@@ -1,0 +1,152 @@
+/* Tokens extraídos de https://epic.new/auth/signin (estilos computados) */
+.login-pagina {
+  --login-fundo: #2d2621;
+  --login-texto: #ece5d8;
+  --login-cartao: #221f1b;
+  --login-primario: #d4a574;
+  --login-borda: #4a4039;
+  --login-suave: #c5bcac;
+  --login-realce: #59493e;
+  --login-anel: #c0a080;
+
+  position: relative;
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background-color: var(--login-fundo);
+  color: var(--login-texto);
+  font-family: var(--font-geist-sans), Geist, sans-serif;
+}
+
+.login-fundo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.login-veu {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 0.1);
+}
+
+.login-conteudo {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+
+.login-cartao {
+  position: relative;
+  width: min(100%, 28rem);
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background: var(--login-fundo);
+  box-shadow:
+    2px 3px 5px 0 #3a332c1f,
+    2px 4px 6px -1px #3a332c1f;
+}
+
+.login-painelFormulario {
+  width: 100%;
+  max-width: 28rem;
+  padding: 1.5rem;
+}
+
+.login-marca {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding-bottom: 1.5rem;
+}
+
+.login-marcaSimbolo {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  border-radius: 0.5rem;
+  background: var(--login-primario);
+  color: var(--login-fundo);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.login-marcaTexto {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.75rem;
+}
+
+.login-titulo {
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.login-titulo h1 {
+  margin: 0;
+  color: var(--login-texto);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.875rem;
+}
+
+.login-titulo p {
+  margin: 0.25rem 0 0;
+  color: var(--login-texto);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.login-decorativo {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .login-cartao {
+    width: 1041px;
+    height: 679px;
+    border-radius: 50px;
+    box-shadow: 0 9px 42.3px 0 rgb(0 0 0 / 0.37);
+  }
+
+  .login-painelFormulario {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 434px;
+    height: 679px;
+    max-width: none;
+    padding: 0 4.5rem;
+    overflow-y: auto;
+    border-radius: 50px 0 0 50px;
+    background: var(--login-fundo);
+  }
+
+  .login-marca {
+    padding-top: 4.5rem;
+    padding-bottom: 3.5rem;
+  }
+
+  .login-decorativo {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: block;
+    width: 607px;
+    height: 679px;
+    border-top: 0.5px solid rgb(255 255 255 / 0.3);
+    border-right: 0.5px solid rgb(255 255 255 / 0.3);
+    border-bottom: 0.5px solid rgb(255 255 255 / 0.3);
+    border-radius: 0 50px 50px 0;
+    background: rgb(255 255 255 / 0.05);
+  }
+}
