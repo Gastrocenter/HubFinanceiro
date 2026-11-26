@@ -30,9 +30,21 @@ _Avoid_: Cliente, tenant
 Local de atendimento (local ProDoctor). Cada atendimento pertence a uma unidade.
 _Avoid_: Filial, local
 
+**Profissional**:
+Pessoa cadastrada como "usuário" no ProDoctor (médico, técnico, funcionário). O ProDoctor não diz quem é médico.
+_Avoid_: Usuário (no Hub, usuário é quem faz login)
+
 **Médico**:
-Profissional que executa procedimentos e recebe repasse por uma pessoa jurídica.
-_Avoid_: Usuário, profissional
+Profissional que recebe repasse pela produção. A marcação é feita no Hub.
+_Avoid_: Usuário, executante
+
+**Usuário do Hub**:
+Pessoa com login no Hub, com um ou mais perfis.
+_Avoid_: Usuário do ProDoctor, operador
+
+**Código de origem**:
+Identificador de um cadastro dentro de uma conta do ProDoctor. Só é único por empresa.
+_Avoid_: ID, código
 
 **Convênio**:
 Operadora de plano de saúde que paga pelos procedimentos de seus beneficiários.
@@ -69,8 +81,11 @@ Divergência ou anomalia que o Hub não resolve sozinho (registro excluído no P
 _Avoid_: Erro, alerta
 
 **De-para**:
-Correspondência entre um código de uma fonte externa e a entidade do Hub (unidade, médico, convênio).
+Correspondência entre (empresa, tipo, código de origem) e uma entidade do Hub (unidade, profissional, convênio).
 _Avoid_: Mapeamento
+
+**A revisar**:
+Estado de um cadastro novo até alguém confirmá-lo na tela de de-para. É um tipo de pendência.
 
 **Alçada**:
 Limite de permissão para lançar, aprovar ou pagar, separável por usuário e tipo de despesa.

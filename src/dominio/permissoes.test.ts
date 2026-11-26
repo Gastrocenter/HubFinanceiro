@@ -13,6 +13,13 @@ describe("temPermissao", () => {
     expect(temPermissao(["financeiro"], "aprovar_despesa")).toBe(false);
   });
 
+  it("admin e financeiro revisam cadastros e de-para; aprovador e restrito não", () => {
+    expect(temPermissao(["admin"], "revisar_cadastros")).toBe(true);
+    expect(temPermissao(["financeiro"], "revisar_cadastros")).toBe(true);
+    expect(temPermissao(["aprovador"], "revisar_cadastros")).toBe(false);
+    expect(temPermissao(["restrito"], "revisar_cadastros")).toBe(false);
+  });
+
   it("todo perfil acessa o painel inicial, e quem não tem perfil não acessa", () => {
     for (const perfil of ["admin", "financeiro", "aprovador", "restrito"] as const) {
       expect(temPermissao([perfil], "acessar_painel")).toBe(true);

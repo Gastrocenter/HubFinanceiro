@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { criarClienteProDoctor } from "@/conectores/prodoctor/cliente";
 import { relogioReal, type Relogio } from "@/conectores/prodoctor/limitador";
 import type { Transporte } from "@/conectores/prodoctor/paginacao";
+import { ehJobDeCadastro, normalizarCadastrosDoJob } from "@/cadastros/normalizar";
 import { executarJob, type ResultadoDoJob } from "./executar-job";
 import { criarRepositorioPostgres } from "./repositorio-postgres";
 
@@ -71,8 +72,18 @@ export async function processarFila({
       }
     }
 
-    const resultado = await executarJob(job, { transporte, repositorio, relogio, prazoFinal });
+    let resultado = await executarJob(job, { transporte, repositorio, relogio, prazoFinal });
     if (resultado === "pausado") await repositorio.liberar(job.id);
+
+    // Cadastro concluído vira de-para na mesma rodada (D-M). Se falhar, o job fica com o erro visível (F7).
+    if (resultado === "concluido" && ehJobDeCadastro(job.rota)) {
+      try {
+        await normalizarCadastrosDoJob(db, job);
+      } catch (erro) {
+        await repositorio.registrarErro(job.id, `normalização: ${(erro as Error).message}`, true);
+        resultado = "falhou";
+      }
+    }
     processados.push({ jobId: job.id, empresa: job.empresa, rota: job.rota, resultado });
   }
   return { processados };

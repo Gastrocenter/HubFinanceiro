@@ -13,6 +13,9 @@ async function Conteudo() {
         {sessao.email} · perfis: {sessao.perfis.join(", ")}
       </p>
       <nav className="mt-6 flex flex-col gap-2 text-sm">
+        {temPermissao(sessao.perfis, "revisar_cadastros") && (
+          <Link href="/cadastros" className="underline">Cadastros e de-para</Link>
+        )}
         {temPermissao(sessao.perfis, "ver_auditoria") && (
           <Link href="/admin/auditoria" className="underline">Log de auditoria</Link>
         )}
