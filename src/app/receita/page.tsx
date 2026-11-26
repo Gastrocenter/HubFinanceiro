@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { rotuloDoMes } from "@/dominio/rotulo-do-mes";
 import { arredondarParaCentavos, formatarReais } from "@/dominio/formatar-reais";
 import { exigirAcesso } from "@/lib/sessao";
 import { criarClienteAdmin } from "@/lib/supabase/admin";
@@ -16,11 +17,6 @@ type Linha = {
   liquido: string;
 };
 
-const NOMES_DOS_MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-function rotuloDoMes(mes: string) {
-  const [ano, m] = mes.split("-");
-  return `${NOMES_DOS_MESES[Number(m) - 1]}/${ano}`;
-}
 
 /** Maior bruto primeiro, comparando em centavos inteiros (sem ponto flutuante). */
 function porBruto(a: Linha, b: Linha) {

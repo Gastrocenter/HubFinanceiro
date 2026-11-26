@@ -23,6 +23,15 @@ describe("temPermissao", () => {
     expect(temPermissao(["restrito"], "ver_repasse")).toBe(false);
   });
 
+  it("admin, financeiro e aprovador veem a conferência; só admin e financeiro resolvem pendência (issue 08, D-B)", () => {
+    for (const perfil of ["admin", "financeiro", "aprovador"] as const) expect(temPermissao([perfil], "ver_conferencia"), perfil).toBe(true);
+    expect(temPermissao(["restrito"], "ver_conferencia")).toBe(false);
+    expect(temPermissao(["admin"], "resolver_pendencia")).toBe(true);
+    expect(temPermissao(["financeiro"], "resolver_pendencia")).toBe(true);
+    expect(temPermissao(["aprovador"], "resolver_pendencia")).toBe(false);
+    expect(temPermissao(["restrito"], "resolver_pendencia")).toBe(false);
+  });
+
   it("admin e financeiro revisam cadastros e de-para; aprovador e restrito não", () => {
     expect(temPermissao(["admin"], "revisar_cadastros")).toBe(true);
     expect(temPermissao(["financeiro"], "revisar_cadastros")).toBe(true);

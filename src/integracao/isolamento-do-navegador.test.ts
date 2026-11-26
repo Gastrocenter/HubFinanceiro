@@ -35,6 +35,8 @@ const FUNCOES: Record<string, Record<string, unknown>> = {
   resumo_repasses: { p_mes: "2026-10" },
   a_repassar: {},
   meses_com_repasse: {},
+  integridade_das_exportacoes: {},
+  resolver_pendencia: { p_id: 1, p_usuario: "00000000-0000-0000-0000-000000000000", p_justificativa: "x" },
   sinais_dos_profissionais: {},
   expurgar_payload_de_exportacao: { p_dias: 120 },
   revisar_cadastro: { p_de_para_id: 1, p_usuario: "00000000-0000-0000-0000-000000000000", p_eh_medico: true },
