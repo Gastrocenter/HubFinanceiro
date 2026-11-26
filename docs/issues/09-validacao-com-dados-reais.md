@@ -1,5 +1,7 @@
 # 09 — Validação com dados reais
 
+Status: ready-for-human
+
 **Tipo:** HITL (Sabrina e Raíssa) · **Depende de:** 08
 
 ## Escopo

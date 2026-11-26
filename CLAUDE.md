@@ -21,3 +21,17 @@ TypeScript, Next.js (App Router), Drizzle, Supabase (Postgres e Auth), Vercel, V
 - Revisão de código segue [CODING_STANDARDS.md](CODING_STANDARDS.md).
 - Esperar um deploy: `vercel inspect <url> --wait --timeout 5m`.
 - Ambiente macOS: não há `timeout` do GNU coreutils.
+
+## Agent skills
+
+### Issue tracker
+
+Issues em markdown local, um arquivo por issue em `docs/issues/NN-slug.md`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Os cinco estados padrão (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), numa linha `Status:` no topo da issue. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` e `docs/adr/` na raiz. See `docs/agents/domain.md`.

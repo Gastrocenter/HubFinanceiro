@@ -1,5 +1,7 @@
 # 07 — F2: repasse ao profissional
 
+Status: ready-for-agent
+
 **Tipo:** AFK + verificação manual · **Depende de:** 05b, 06 · **Decisões:** fechadas em 26/11/2026 (abaixo)
 
 ## Contexto

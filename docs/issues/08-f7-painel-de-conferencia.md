@@ -1,5 +1,7 @@
 # 08 — F7: painel de conferência
 
+Status: ready-for-agent
+
 **Tipo:** AFK · **Depende de:** 06, 07
 
 ## Escopo

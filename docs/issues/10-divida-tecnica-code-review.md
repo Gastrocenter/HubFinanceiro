@@ -1,5 +1,7 @@
 # 10 — Dívida técnica do /code-review de 26/11/2026
 
+Status: ready-for-agent
+
 **Tipo:** AFK · **Depende de:** nada (pode entrar antes, junto ou depois da 07/08) · **Origem:** `/code-review` desde `fa12330`
 
 Os itens 1 a 4 da revisão já foram corrigidos (commits `56a3cf3`, `ae24e6c`, `5b1198b`, `c8f27f0`). Estes são os 6 restantes, menores. Cada um vira uma fatia com teste que falha antes da correção (`/tdd`).
