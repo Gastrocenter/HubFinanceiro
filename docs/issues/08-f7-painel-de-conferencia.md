@@ -1,7 +1,5 @@
 # 08 — F7: painel de conferência
 
-Status: ready-for-agent
-
 **Tipo:** AFK · **Depende de:** 06, 07
 
 ## Escopo
@@ -11,9 +9,9 @@ Status: ready-for-agent
 - **Invariante de integridade (retro da issue 06):** todo job de exportação `concluido` dentro da janela de 120 dias tem `conferir_receita_do_job` batendo (linhas e total iguais entre bruto e Hub). Job que não bate aparece em destaque. Na carga inicial, um mês pareceu "concluído sem receita" e só a conferência manual mostrou; isto torna a checagem permanente. Estender a mesma checagem aos repasses (issue 07) quando existir a conferência deles.
 
 ## Critérios de aceite
-- [ ] Cada pendência aponta para o registro de origem.
-- [ ] Resolver uma pendência fica na auditoria.
-- [ ] Sync parado há mais de 24 h aparece em destaque.
+- [x] Cada pendência aponta para o registro de origem.
+- [x] Resolver uma pendência fica na auditoria.
+- [x] Sync parado há mais de 24 h aparece em destaque.
 
 ## Decisões (26/11/2026)
 - **D-A:** contas a pagar/receber sai desta issue e vira a [08b](08b-contas-pagar-receber.md): é uma sincronização nova, do tamanho da 07.
@@ -35,4 +33,6 @@ Status: ready-for-agent
 ## Estado (26/11/2026)
 Feito: S1–S5 com testes (classificação, status das sincronizações, permissões `ver_conferencia` e `resolver_pendencia`, teste SQL `conferencia.sql` com TESTE_OK, isolamento do navegador com as duas funções novas), migrations `20261126122034_painel_de_conferencia` e `20261126123242_integridade_sem_bruto`, tela `/conferencia` com link no painel. Integridade nos dados reais: 24 de 24 meses batem (12 de receita, 12 de repasse). Nenhuma pendência no banco hoje.
 
-Falta: testar a tela em produção (resolver uma pendência de verdade só quando houver uma).
+Tela testada em produção em 26/11/2026. Resolver pendência coberto pelo teste SQL (fecha e audita na mesma transação); em produção só quando houver uma pendência.
+
+**Fechada em 26/11/2026.** Painel de conferência em produção; integridade 24 de 24.
