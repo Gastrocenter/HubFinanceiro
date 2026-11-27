@@ -3,6 +3,7 @@ import {
   HandCoins,
   LayoutDashboard,
   ScrollText,
+  Tags,
   TrendingUp,
   Users,
   Wallet,
@@ -16,6 +17,7 @@ const ICONES: Record<string, LucideIcon> = {
   "/contas": Wallet,
   "/conferencia": ClipboardCheck,
   "/cadastros": Users,
+  "/cadastros/categorias": Tags,
   "/admin/auditoria": ScrollText,
 };
 

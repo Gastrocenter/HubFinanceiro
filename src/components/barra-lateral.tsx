@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { ChevronsUpDown, LayoutDashboard, LogOut } from "lucide-react";
 import { iconeDe } from "@/components/icones-do-menu";
 import { sair } from "@/app/login/acoes";
-import { estaAtivo, type SecaoDoMenu } from "@/dominio/menu";
+import { itemAtivo, type SecaoDoMenu } from "@/dominio/menu";
 import type { Perfil } from "@/dominio/permissoes";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -69,6 +69,7 @@ export function BarraLateral({
   usuario: { email: string; perfis: readonly Perfil[] } | null;
 }) {
   const pathname = usePathname();
+  const hrefAtivo = itemAtivo(pathname, menu.flatMap((s) => s.itens.map((i) => i.href)));
 
   return (
     <Sidebar variant="floating" collapsible="icon">
@@ -81,7 +82,7 @@ export function BarraLateral({
             <SidebarMenu>
               {secao.itens.map((item) => {
                 const Icone = iconeDe(item.href) ?? LayoutDashboard;
-                const ativo = estaAtivo(pathname, item.href);
+                const ativo = item.href === hrefAtivo;
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton

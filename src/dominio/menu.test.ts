@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buscaPara, estaAtivo, menuPara, trilhaDe } from "./menu";
+import { buscaPara, estaAtivo, itemAtivo, menuPara, trilhaDe } from "./menu";
 
 const hrefs = (perfis: Parameters<typeof menuPara>[0]) => menuPara(perfis).flatMap((s) => s.itens.map((i) => i.href));
 
 describe("menuPara", () => {
   it("admin vê todas as telas, auditoria inclusive", () => {
-    expect(hrefs(["admin"])).toEqual(["/painel", "/receita", "/repasses", "/contas", "/conferencia", "/cadastros", "/admin/auditoria"]);
+    expect(hrefs(["admin"])).toEqual(["/painel", "/receita", "/repasses", "/contas", "/conferencia", "/cadastros", "/cadastros/categorias", "/admin/auditoria"]);
   });
 
   it("aprovador não vê cadastros nem auditoria", () => {
@@ -19,7 +19,7 @@ describe("menuPara", () => {
   });
 
   it("perfis acumulados somam as telas, sem repetir", () => {
-    expect(hrefs(["aprovador", "financeiro"])).toEqual(["/painel", "/receita", "/repasses", "/contas", "/conferencia", "/cadastros"]);
+    expect(hrefs(["aprovador", "financeiro"])).toEqual(["/painel", "/receita", "/repasses", "/contas", "/conferencia", "/cadastros", "/cadastros/categorias"]);
   });
 
   it("sem perfil, nenhum item", () => {
@@ -59,7 +59,20 @@ describe("estaAtivo", () => {
   });
 });
 
+describe("itemAtivo", () => {
+  it("rota abaixo de dois itens fica com o mais específico", () => {
+    const hrefs = ["/cadastros", "/cadastros/categorias"];
+    expect(itemAtivo("/cadastros/categorias", hrefs)).toBe("/cadastros/categorias");
+    expect(itemAtivo("/cadastros", hrefs)).toBe("/cadastros");
+    expect(itemAtivo("/painel", hrefs)).toBeUndefined();
+  });
+});
+
 describe("trilhaDe", () => {
+  it("Categorias fica em Controle, não em Cadastros e de-para", () => {
+    expect(trilhaDe("/cadastros/categorias")).toEqual([{ rotulo: "Controle" }, { rotulo: "Categorias", href: "/cadastros/categorias" }]);
+  });
+
   it("seção e tela, só a tela com link", () => {
     expect(trilhaDe("/receita")).toEqual([{ rotulo: "Financeiro" }, { rotulo: "Receita", href: "/receita" }]);
     expect(trilhaDe("/admin/auditoria")).toEqual([{ rotulo: "Controle" }, { rotulo: "Auditoria", href: "/admin/auditoria" }]);

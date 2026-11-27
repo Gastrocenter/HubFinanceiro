@@ -20,6 +20,8 @@ const MENU: readonly SecaoDoMenu[] = [
     itens: [
       { rotulo: "Conferência", href: "/conferencia", acao: "ver_conferencia" },
       { rotulo: "Cadastros e de-para", href: "/cadastros", acao: "revisar_cadastros" },
+      // Editar categorias segue a permissão de cadastros: só admin e financeiro (issue 11, D-11).
+      { rotulo: "Categorias", href: "/cadastros/categorias", acao: "revisar_cadastros" },
       { rotulo: "Auditoria", href: "/admin/auditoria", acao: "ver_auditoria" },
     ],
   },
@@ -44,6 +46,7 @@ const PALAVRAS: Record<string, string[]> = {
   "/contas": ["pagar", "receber", "títulos", "vencimento"],
   "/conferencia": ["pendências", "sincronização", "integridade", "divergência", "prodoctor"],
   "/cadastros": ["profissionais", "convênios", "unidades", "de-para", "revisão"],
+  "/cadastros/categorias": ["plano financeiro", "item", "sem categoria", "imposto", "despesa"],
   "/admin/auditoria": ["log", "histórico", "quem fez"],
 };
 
@@ -70,10 +73,16 @@ export function estaAtivo(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/** O item ativo entre estes: o mais específico, para `/cadastros/categorias` não acender também `/cadastros`. */
+export function itemAtivo(pathname: string, hrefs: readonly string[]): string | undefined {
+  return hrefs.filter((h) => estaAtivo(pathname, h)).sort((a, b) => b.length - a.length)[0];
+}
+
 /** Trilha do breadcrumb: a seção (sem link) e a tela. */
 export function trilhaDe(pathname: string): PassoDaTrilha[] {
+  const ativo = itemAtivo(pathname, MENU.flatMap((s) => s.itens.map((i) => i.href)));
   for (const secao of MENU) {
-    const item = secao.itens.find((i) => estaAtivo(pathname, i.href));
+    const item = secao.itens.find((i) => i.href === ativo);
     if (item) return [{ rotulo: secao.titulo }, { rotulo: item.rotulo, href: item.href }];
   }
   return [];
