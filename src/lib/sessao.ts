@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { decidirAcesso, type Sessao } from "@/dominio/acesso";
 import type { Acao, Perfil } from "@/dominio/permissoes";
 import { criarClienteAdmin } from "./supabase/admin";
@@ -13,6 +14,9 @@ export type SessaoComEmail = Sessao & { email: string };
  * `cache` do React vale só dentro da requisição; não guarda sessão entre usuários.
  */
 export const carregarSessao = cache(async (): Promise<SessaoComEmail | null> => {
+  // A sessão é sempre da requisição: o Supabase compara o token com `Date.now()`, que o Next não aceita no
+  // pré-carregamento parcial (erro "unstable value Date.now()" em /cadastros e /repasses). Fica para a requisição.
+  await connection();
   const supabase = await criarClienteServidor();
   // getUser valida o token no servidor do Supabase; não confiar só no cookie.
   const { data } = await supabase.auth.getUser();
