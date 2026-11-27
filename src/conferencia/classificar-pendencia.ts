@@ -44,6 +44,18 @@ export function classificarPendencia({ tipo, referencia, detalhes }: PendenciaDo
         resolveAMao: true,
       };
     }
+    case "item_sem_categoria": {
+      // Como o de-para: fecha sozinha quando o item ganha categoria (issue 11, D-5); o banco recusa resolver à mão.
+      const natureza = comoTexto(detalhes.natureza) === "receber" ? "receber" : "pagar";
+      return {
+        categoria: "de_para",
+        origem: {
+          texto: `Item “${comoTexto(detalhes.item)}” (${natureza === "pagar" ? "a pagar" : "a receber"}) sem categoria`,
+          link: `/cadastros/categorias?natureza=${natureza}`,
+        },
+        resolveAMao: false,
+      };
+    }
     case "repasse_sumiu": {
       const lote = referencia.split(":")[3];
       return {

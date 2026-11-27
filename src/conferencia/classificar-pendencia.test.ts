@@ -77,9 +77,22 @@ describe("classificarPendencia", () => {
     });
   });
 
+  it("item sem categoria aponta para Cadastros → Categorias e não se resolve à mão (issue 11, D-5)", () => {
+    expect(
+      classificarPendencia({ tipo: "item_sem_categoria", referencia: "pagar:Frete de Compra", detalhes: { natureza: "pagar", item: "Frete de Compra" } }),
+    ).toEqual({
+      categoria: "de_para",
+      origem: { texto: "Item “Frete de Compra” (a pagar) sem categoria", link: "/cadastros/categorias?natureza=pagar" },
+      resolveAMao: false,
+    });
+    expect(
+      classificarPendencia({ tipo: "item_sem_categoria", referencia: "receber:CPRE", detalhes: { natureza: "receber", item: "CPRE" } }).origem,
+    ).toEqual({ texto: "Item “CPRE” (a receber) sem categoria", link: "/cadastros/categorias?natureza=receber" });
+  });
+
   it("todo tipo que o Hub cria tem tratamento próprio (nenhum cai em 'outra')", () => {
     const tipos = [
-      "procedimento_sumiu", "repasse_sumiu", "repasse_sem_procedimento", "glosa_apos_repasse", "conta_sumiu",
+      "procedimento_sumiu", "repasse_sumiu", "repasse_sem_procedimento", "glosa_apos_repasse", "conta_sumiu", "item_sem_categoria",
       "unidade_sem_par", "profissional_sem_par", "profissional_ambiguo", "convenio_sem_par", "convenio_ambiguo",
     ];
     for (const tipo of tipos) {

@@ -65,6 +65,10 @@ export async function normalizarContasDoJob(db: SupabaseClient, job: { id: strin
   });
   if (error) throw new Error(`aplicar contas de ${mes}: ${error.message}`);
 
+  // Item novo no plano sem categoria vira pendência; item que ganhou categoria fecha a sua (issue 11, D-5).
+  const conferencia = await db.rpc("conferir_itens_sem_categoria");
+  if (conferencia.error) throw new Error(`conferir itens sem categoria: ${conferencia.error.message}`);
+
   return {
     mes,
     linhas: vindas.length,
