@@ -4,6 +4,10 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const chavePublica = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 const TABELAS = ["perfis_usuarios", "auditoria", "sync_jobs", "prodoctor_payload_bruto", "unidades", "profissionais", "convenios", "de_para", "recebiveis", "pendencias", "repasses", "titulos_repasse", "plano_financeiro", "contas_pagar_receber"] as const;
+const filtrosDeTeste = {
+  p_natureza: "pagar", p_aba: "todas", p_de: "2026-10-01", p_ate: "2026-10-31", p_tipo_data: "vencimento",
+  p_situacoes: [], p_categorias: [], p_fornecedor: null,
+};
 /** Corpos com colunas reais: assim a recusa só pode ser de permissão, não de pedido malformado. */
 const CORPO_VALIDO: Record<(typeof TABELAS)[number], Record<string, unknown>> = {
   perfis_usuarios: { usuario_id: "00000000-0000-0000-0000-000000000000", perfil: "admin" },
@@ -53,6 +57,12 @@ const FUNCOES: Record<string, Record<string, unknown>> = {
   itens_para_categorizar: {},
   definir_categoria_do_item: { p_natureza: "pagar", p_item: "x", p_categoria_id: 1, p_usuario: "00000000-0000-0000-0000-000000000000" },
   salvar_categoria: { p_natureza: "pagar", p_id: null, p_nome: "x", p_usuario: "00000000-0000-0000-0000-000000000000" },
+  slug_da_categoria: { p_nome: "x" },
+  contas_filtradas: filtrosDeTeste,
+  listar_contas: filtrosDeTeste,
+  totais_contas_filtradas: filtrosDeTeste,
+  resumo_por_categoria: filtrosDeTeste,
+  conferir_itens_sem_categoria: {},
 };
 
 function chamar(tabela: string, init: RequestInit = {}) {
