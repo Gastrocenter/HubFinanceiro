@@ -50,6 +50,9 @@ const FUNCOES: Record<string, Record<string, unknown>> = {
   sinais_dos_profissionais: {},
   expurgar_payload_de_exportacao: { p_dias: 120 },
   revisar_cadastro: { p_de_para_id: 1, p_usuario: "00000000-0000-0000-0000-000000000000", p_eh_medico: true },
+  itens_para_categorizar: {},
+  definir_categoria_do_item: { p_natureza: "pagar", p_item: "x", p_categoria_id: 1, p_usuario: "00000000-0000-0000-0000-000000000000" },
+  salvar_categoria: { p_natureza: "pagar", p_id: null, p_nome: "x", p_usuario: "00000000-0000-0000-0000-000000000000" },
 };
 
 function chamar(tabela: string, init: RequestInit = {}) {
