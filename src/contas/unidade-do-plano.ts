@@ -4,8 +4,9 @@
  * Toda conta está no local ProDoctor Stella Central, inclusive as da Sabin: a unidade só aparece na raiz do
  * código do plano (`raiz.natureza.grupo.item`). E cada item se repete por raiz com o sufixo da unidade.
  *
- * ATENÇÃO: a regra SQL equivalente (aba pela raiz do código, item sem sufixo para ligar à categoria) virá nas
- * seams S3/S4 da issue 11 e precisa bater com esta. Mudou aqui, muda lá, e vice-versa.
+ * ATENÇÃO: as funções SQL `unidade_do_plano` e `item_sem_unidade` (migration `*_categorias_do_hub.sql`) são o
+ * espelho destas e precisam bater. Mudou aqui, muda lá, e vice-versa; os mesmos casos estão em
+ * `supabase/tests/categorias.sql`.
  */
 
 /** Aba em que a conta aparece; `caixa` (raiz 0 ou desconhecida) só aparece em "Todas". */
