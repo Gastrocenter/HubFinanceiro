@@ -94,3 +94,13 @@ export function filtrosLigados(f: FiltrosDeContas, hoje: string): number {
     f.fornecedor !== null,
   ].filter(Boolean).length;
 }
+
+/** Liga o valor se está desligado, desliga se está ligado; a ordem dos outros fica. */
+export const alternar = <T>(lista: readonly T[], valor: T): T[] =>
+  lista.includes(valor) ? lista.filter((v) => v !== valor) : [...lista, valor];
+
+/** O link da página com os filtros atuais mais a mudança: é assim que painel, tabela e menu escrevem no endereço. */
+export function comFiltros(caminho: string, f: FiltrosDeContas, mudanca: Partial<FiltrosDeContas>, hoje: string): string {
+  const busca = filtrosParaBusca({ ...f, ...mudanca }, hoje);
+  return busca ? `${caminho}?${busca}` : caminho;
+}

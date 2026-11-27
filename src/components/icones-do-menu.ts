@@ -1,4 +1,6 @@
 import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
   ClipboardCheck,
   HandCoins,
   LayoutDashboard,
@@ -6,7 +8,6 @@ import {
   Tags,
   TrendingUp,
   Users,
-  Wallet,
   type LucideIcon,
 } from "lucide-react";
 
@@ -14,7 +15,8 @@ const ICONES: Record<string, LucideIcon> = {
   "/painel": LayoutDashboard,
   "/receita": TrendingUp,
   "/repasses": HandCoins,
-  "/contas": Wallet,
+  "/contas/pagar": ArrowUpFromLine,
+  "/contas/receber": ArrowDownToLine,
   "/conferencia": ClipboardCheck,
   "/cadastros": Users,
   "/cadastros/categorias": Tags,

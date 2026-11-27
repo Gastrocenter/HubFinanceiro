@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filtrosLigados, filtrosParaBusca, lerFiltros, type FiltrosDeContas } from "./filtros";
+import { alternar, comFiltros, filtrosLigados, filtrosParaBusca, lerFiltros, type FiltrosDeContas } from "./filtros";
 
 const hoje = "2026-11-26";
 const padrao: FiltrosDeContas = {
@@ -140,5 +140,21 @@ describe("filtrosLigados", () => {
 
   it("a aba não é filtro do painel", () => {
     expect(filtrosLigados({ ...padrao, aba: "todas" }, hoje)).toBe(0);
+  });
+});
+
+describe("comFiltros e alternar (issue 11, D-7)", () => {
+  const hoje = "2026-11-27";
+  const padrao = lerFiltros({}, hoje);
+
+  it("alternar liga o que está desligado e desliga o que está ligado, sem mexer no resto", () => {
+    expect(alternar(["imposto"], "taxa-de-cartao")).toEqual(["imposto", "taxa-de-cartao"]);
+    expect(alternar(["imposto", "taxa-de-cartao"], "imposto")).toEqual(["taxa-de-cartao"]);
+  });
+
+  it("comFiltros monta o link da página com a mudança, a partir dos filtros atuais", () => {
+    expect(comFiltros("/contas/pagar", padrao, { categorias: ["imposto"] }, hoje)).toBe("/contas/pagar?categoria=imposto");
+    expect(comFiltros("/contas/receber", { ...padrao, aba: "sabin" }, {}, hoje)).toBe("/contas/receber?aba=sabin");
+    expect(comFiltros("/contas/pagar", { ...padrao, categorias: ["imposto"] }, { categorias: [] }, hoje)).toBe("/contas/pagar");
   });
 });

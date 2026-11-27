@@ -5,11 +5,11 @@ const hrefs = (perfis: Parameters<typeof menuPara>[0]) => menuPara(perfis).flatM
 
 describe("menuPara", () => {
   it("admin vê todas as telas, auditoria inclusive", () => {
-    expect(hrefs(["admin"])).toEqual(["/painel", "/receita", "/repasses", "/contas", "/conferencia", "/cadastros", "/cadastros/categorias", "/admin/auditoria"]);
+    expect(hrefs(["admin"])).toEqual(["/painel", "/receita", "/repasses", "/contas/pagar", "/contas/receber", "/conferencia", "/cadastros", "/cadastros/categorias", "/admin/auditoria"]);
   });
 
   it("aprovador não vê cadastros nem auditoria", () => {
-    expect(hrefs(["aprovador"])).toEqual(["/painel", "/receita", "/repasses", "/contas", "/conferencia"]);
+    expect(hrefs(["aprovador"])).toEqual(["/painel", "/receita", "/repasses", "/contas/pagar", "/contas/receber", "/conferencia"]);
   });
 
   it("restrito só vê o painel, e seção sem item some", () => {
@@ -19,7 +19,7 @@ describe("menuPara", () => {
   });
 
   it("perfis acumulados somam as telas, sem repetir", () => {
-    expect(hrefs(["aprovador", "financeiro"])).toEqual(["/painel", "/receita", "/repasses", "/contas", "/conferencia", "/cadastros", "/cadastros/categorias"]);
+    expect(hrefs(["aprovador", "financeiro"])).toEqual(["/painel", "/receita", "/repasses", "/contas/pagar", "/contas/receber", "/conferencia", "/cadastros", "/cadastros/categorias"]);
   });
 
   it("sem perfil, nenhum item", () => {

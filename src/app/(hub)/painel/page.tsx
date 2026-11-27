@@ -19,7 +19,8 @@ import {
 const DESCRICOES: Record<string, string> = {
   "/receita": "Procedimentos do ProDoctor por competência, bruto, glosa e líquido.",
   "/repasses": "Quanto cada profissional recebe no mês.",
-  "/contas": "Títulos a pagar e a receber por vencimento.",
+  "/contas/pagar": "Despesas por categoria, com filtro por dia, unidade e situação.",
+  "/contas/receber": "Receitas por categoria, com filtro por dia, unidade e situação.",
   "/conferencia": "Pendências, sincronizações e integridade das exportações.",
   "/cadastros": "Profissionais, convênios e de-para vindos do ProDoctor.",
   "/admin/auditoria": "Quem fez o quê no Hub.",

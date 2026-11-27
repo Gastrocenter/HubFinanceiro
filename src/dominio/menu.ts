@@ -12,7 +12,9 @@ const MENU: readonly SecaoDoMenu[] = [
     itens: [
       { rotulo: "Receita", href: "/receita", acao: "ver_receita" },
       { rotulo: "Repasses", href: "/repasses", acao: "ver_repasse" },
-      { rotulo: "Contas a pagar e receber", href: "/contas", acao: "ver_contas" },
+      // Páginas separadas (issue 11, D-1); `/contas` redireciona para "a pagar".
+      { rotulo: "Contas a pagar", href: "/contas/pagar", acao: "ver_contas" },
+      { rotulo: "Contas a receber", href: "/contas/receber", acao: "ver_contas" },
     ],
   },
   {
@@ -43,7 +45,8 @@ const PALAVRAS: Record<string, string[]> = {
   "/painel": ["início", "resumo", "indicadores"],
   "/receita": ["faturamento", "procedimentos", "glosa", "competência", "bruto", "líquido"],
   "/repasses": ["profissional", "médico", "pagamento", "lote"],
-  "/contas": ["pagar", "receber", "títulos", "vencimento"],
+  "/contas/pagar": ["despesas", "fornecedor", "imposto", "taxa", "salário", "repasse", "insumos", "vencimento"],
+  "/contas/receber": ["receitas", "convênio", "paciente", "recebimento", "vencimento"],
   "/conferencia": ["pendências", "sincronização", "integridade", "divergência", "prodoctor"],
   "/cadastros": ["profissionais", "convênios", "unidades", "de-para", "revisão"],
   "/cadastros/categorias": ["plano financeiro", "item", "sem categoria", "imposto", "despesa"],
