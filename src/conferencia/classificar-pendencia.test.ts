@@ -17,13 +17,17 @@ describe("classificarPendencia", () => {
 
   it("conta a pagar/receber que sumiu é 'excluído' e aponta para as contas do mês de vencimento (issue 08b)", () => {
     expect(
-      classificarPendencia({ tipo: "conta_sumiu", referencia: "1:52001", detalhes: { mes: "2026-10", vencimento: "2026-11-05" } }),
+      classificarPendencia({ tipo: "conta_sumiu", referencia: "1:52001", detalhes: { mes: "2026-10", vencimento: "2026-11-05", situacao: "PAGAR" } }),
     ).toEqual({
       categoria: "excluido",
-      origem: { texto: "Unidade 1, conta a pagar/receber nº 52001", link: "/contas?mes=2026-11" },
+      origem: { texto: "Unidade 1, conta a pagar nº 52001", link: "/contas/pagar?aba=todas&de=2026-11-01&ate=2026-11-30" },
       resolveAMao: true,
     });
-    expect(classificarPendencia({ tipo: "conta_sumiu", referencia: "1:52001", detalhes: { mes: "2026-10" } }).origem.link).toBe("/contas");
+    // A receber vai para a página a receber (issue 11): a página antiga mostrava as duas.
+    expect(
+      classificarPendencia({ tipo: "conta_sumiu", referencia: "1:9", detalhes: { vencimento: "2026-02-10", situacao: "RECEBIDA" } }).origem,
+    ).toEqual({ texto: "Unidade 1, conta a receber nº 9", link: "/contas/receber?aba=todas&de=2026-02-01&ate=2026-02-28" });
+    expect(classificarPendencia({ tipo: "conta_sumiu", referencia: "1:52001", detalhes: { mes: "2026-10" } }).origem.link).toBe("/contas/pagar?aba=todas");
   });
 
   it("repasse sem procedimento aponta para o lote no mês do repasse", () => {

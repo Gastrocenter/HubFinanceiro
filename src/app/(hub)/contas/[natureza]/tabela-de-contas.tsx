@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatarReais } from "@/dominio/formatar-reais";
-import { alternar, comFiltros, type FiltrosDeContas, type SituacaoDoFiltro } from "@/contas/filtros";
+import { alternar, comFiltros, SITUACOES, type FiltrosDeContas, type SituacaoDoFiltro } from "@/contas/filtros";
 
 export type ContaDaTabela = {
   id: string;
@@ -142,7 +142,7 @@ export function TabelaDeContas({ contas, caminho, filtros, hoje, categorias, rot
             opcoes={situacoes}
             marcadas={filtros.situacoes}
             hrefDe={(proximas) =>
-              comFiltros(caminho, filtros, { situacoes: situacoes.map((s) => s.slug).filter((s) => proximas.includes(s)) as SituacaoDoFiltro[] }, hoje)
+              comFiltros(caminho, filtros, { situacoes: SITUACOES.filter((s) => proximas.includes(s)) }, hoje)
             }
           />
         ),

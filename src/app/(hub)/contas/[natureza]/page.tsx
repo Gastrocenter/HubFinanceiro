@@ -41,8 +41,10 @@ function agrupar(resumo: LinhaDoResumo[]): Categoria[] {
 function MenuDeCategorias({ caminho, filtros, hoje, categorias, efetivado }: {
   caminho: string; filtros: FiltrosDeContas; hoje: string; categorias: Categoria[]; efetivado: string;
 }) {
-  if (categorias.length === 0) return null;
   const marcadas = new Set(filtros.categorias);
+  // Categoria marcada sem conta no período (ou que mudou de nome): continua à vista para poder desmarcar.
+  const semConta = filtros.categorias.filter((s) => !categorias.some((c) => c.slug === s));
+  if (categorias.length === 0 && semConta.length === 0) return null;
   return (
     <section aria-labelledby="titulo-categorias" className="rounded-2xl border bg-card p-4">
       <div className="flex items-baseline justify-between gap-4">
@@ -53,6 +55,21 @@ function MenuDeCategorias({ caminho, filtros, hoje, categorias, efetivado }: {
           </Link>
         )}
       </div>
+      {semConta.length > 0 && (
+        <ul className="mt-3 flex flex-wrap gap-1.5 text-xs">
+          {semConta.map((s) => (
+            <li key={s}>
+              <Link
+                href={comFiltros(caminho, filtros, { categorias: filtros.categorias.filter((x) => x !== s) }, hoje)}
+                className="rounded-full border px-2 py-0.5 text-muted-foreground hover:text-foreground"
+                aria-label={`Desmarcar ${s}, sem contas neste filtro`}
+              >
+                {s} · sem contas ✕
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
       <ul className="mt-3 flex flex-col gap-1 text-sm">
         {categorias.map((c) => {
           const ligada = marcadas.has(c.slug);
@@ -106,6 +123,11 @@ async function Conteudo({ params, searchParams }: { params: Promise<{ natureza: 
   const t = TEXTOS[natureza];
   const { linhas, totais, resumo } = await consultarContas(criarClienteAdmin(), natureza, filtros);
   const categorias = agrupar(resumo);
+  // Opções do painel e do cabeçalho: as do período e as marcadas que não têm conta nele (para poder desmarcar).
+  const opcoes = [
+    ...categorias.map((c) => ({ slug: c.slug, nome: c.nome })),
+    ...filtros.categorias.filter((s) => !categorias.some((c) => c.slug === s)).map((s) => ({ slug: s, nome: `${s} (sem contas)` })),
+  ];
 
   const contas: ContaDaTabela[] = linhas.map((l) => ({
     id: String(l.id),
@@ -124,7 +146,8 @@ async function Conteudo({ params, searchParams }: { params: Promise<{ natureza: 
   }));
 
   const cartoes = [
-    ["Em aberto", totais.em_aberto],
+    // O cartão soma todo o aberto; no filtro de situação, "Em aberto" é só o que ainda não venceu.
+    ["Em aberto (inclui vencido)", totais.em_aberto],
     ["Vencido", totais.vencido],
     [t.efetivado, totais.efetivado],
   ] as const;
@@ -147,7 +170,7 @@ async function Conteudo({ params, searchParams }: { params: Promise<{ natureza: 
           rotuloEfetivacao={t.efetivacao}
           rotuloEfetivada={natureza === "pagar" ? "Paga" : "Recebida"}
           rotuloPessoa={t.pessoa}
-          categorias={categorias.map((c) => ({ slug: c.slug, nome: c.nome }))}
+          categorias={opcoes}
         />
       </div>
 
@@ -183,7 +206,7 @@ async function Conteudo({ params, searchParams }: { params: Promise<{ natureza: 
           caminho={caminho}
           filtros={filtros}
           hoje={hoje}
-          categorias={categorias.map((c) => ({ slug: c.slug, nome: c.nome }))}
+          categorias={opcoes}
           rotuloEfetivacao={t.efetivacao}
           rotuloEfetivada={natureza === "pagar" ? "Paga" : "Recebida"}
           rotuloPessoa={t.pessoa}

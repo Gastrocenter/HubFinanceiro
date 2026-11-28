@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lerNatureza, montarItens, validarNomeDeCategoria, validarTrocaDeCategoria } from "./categorias";
+import { lerNatureza, slugDaCategoria, montarItens, validarNomeDeCategoria, validarTrocaDeCategoria } from "./categorias";
 
 describe("montarItens", () => {
   const categorias = [
@@ -81,6 +81,16 @@ describe("validarNomeDeCategoria", () => {
     expect(validarNomeDeCategoria("imposto", existentes)).toEqual({ ok: false, erro: 'Já existe a categoria "Imposto".' });
   });
 
+  it("recusa nome que vira o mesmo identificador de outra categoria, inclusive da outra lista", () => {
+    expect(validarNomeDeCategoria("Impostó", existentes)).toEqual({ ok: false, erro: 'Já existe a categoria "Imposto".' });
+    expect(validarNomeDeCategoria("Taxa de Cartao", existentes).ok).toBe(false);
+  });
+
+  it("recusa nome reservado ou sem letra nem número", () => {
+    expect(validarNomeDeCategoria("Sem categoria", existentes)).toEqual({ ok: false, erro: '"Sem categoria" é reservado.' });
+    expect(validarNomeDeCategoria("!!!", existentes)).toEqual({ ok: false, erro: "O nome precisa ter letra ou número." });
+  });
+
   it("renomear a própria categoria para outra grafia vale", () => {
     expect(validarNomeDeCategoria("IMPOSTO", existentes, 1)).toEqual({ ok: true, nome: "IMPOSTO" });
     expect(validarNomeDeCategoria("Imposto", existentes, 2).ok).toBe(false);
@@ -139,5 +149,14 @@ describe("validarTrocaDeCategoria", () => {
       ok: false,
       erro: "Item inválido.",
     });
+  });
+});
+
+describe("slugDaCategoria (espelho de slug_da_categoria no banco)", () => {
+  it("tira acento, junta o resto com hífen e apara", () => {
+    expect(slugDaCategoria("Manutenção e exames")).toBe("manutencao-e-exames");
+    expect(slugDaCategoria(" pH-metria ")).toBe("ph-metria");
+    expect(slugDaCategoria("Repasse de honorário médico")).toBe("repasse-de-honorario-medico");
+    expect(slugDaCategoria("!!!")).toBe("");
   });
 });

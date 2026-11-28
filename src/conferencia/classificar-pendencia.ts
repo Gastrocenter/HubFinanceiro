@@ -37,10 +37,22 @@ export function classificarPendencia({ tipo, referencia, detalhes }: PendenciaDo
       return { categoria: "excluido", origem: { texto: procedimento(referencia), link: `/receita?mes=${mes}` }, resolveAMao: true };
     case "conta_sumiu": {
       const [unidade, numero] = referencia.split(":");
-      const mesDoVencimento = comoTexto(detalhes.vencimento).slice(0, 7);
+      // Natureza pela situação, como no banco (natureza_da_conta): cada uma tem sua página (issue 11, D-1).
+      const situacao = comoTexto(detalhes.situacao);
+      const natureza = situacao === "RECEBER" || situacao === "RECEBIDA" ? "receber" : situacao === "PAGAR" || situacao === "PAGA" ? "pagar" : null;
+      const mesDoVencimento = /^\d{4}-\d{2}/.test(comoTexto(detalhes.vencimento)) ? comoTexto(detalhes.vencimento).slice(0, 7) : "";
+      let periodo = "";
+      if (mesDoVencimento) {
+        const [ano, mes] = mesDoVencimento.split("-").map(Number);
+        const ultimo = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+        periodo = `&de=${mesDoVencimento}-01&ate=${mesDoVencimento}-${String(ultimo).padStart(2, "0")}`;
+      }
       return {
         categoria: "excluido",
-        origem: { texto: `Unidade ${unidade}, conta a pagar/receber nº ${numero}`, link: mesDoVencimento ? `/contas?mes=${mesDoVencimento}` : "/contas" },
+        origem: {
+          texto: `Unidade ${unidade}, conta a ${natureza ?? "pagar/receber"} nº ${numero}`,
+          link: `/contas/${natureza ?? "pagar"}?aba=todas${periodo}`,
+        },
         resolveAMao: true,
       };
     }

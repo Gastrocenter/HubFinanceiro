@@ -117,7 +117,8 @@ begin
   if lista is distinct from '9001,9003,9004' then falhas := falhas || ' VENCIDA_OU_EFETIVADA_' || coalesce(lista, 'nada'); end if;
   select string_agg(numero, ',' order by numero) into lista
     from public.listar_contas('pagar', 'todas', '1999-03-01', '1999-03-31', 'vencimento', '{aberta}', sem_filtro, null, hoje);
-  if lista is distinct from '9001,9002,9004' then falhas := falhas || ' ABERTA_' || coalesce(lista, 'nada'); end if;
+  -- Em aberto é o que ainda não venceu (9001 e 9004 vencidas ficam de fora).
+  if lista is distinct from '9002' then falhas := falhas || ' ABERTA_' || coalesce(lista, 'nada'); end if;
 
   -- Categoria: mesmo item nas raízes cai na mesma categoria; "sem-categoria" pega o item sem ligação.
   select string_agg(numero, ',' order by numero) into lista
@@ -210,6 +211,11 @@ begin
   begin
     insert into public.categorias (natureza, nome) values ('pagar', 'IMPOSTO');
     falhas := falhas || ' SLUG_REPETIDO_ACEITO';
+  exception when unique_violation then null;
+  end;
+  begin
+    insert into public.categorias (natureza, nome) values ('receber', 'Impostó');
+    falhas := falhas || ' SLUG_REPETIDO_NA_OUTRA_LISTA_ACEITO';
   exception when unique_violation then null;
   end;
   begin

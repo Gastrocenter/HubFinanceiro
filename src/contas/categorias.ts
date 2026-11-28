@@ -24,9 +24,28 @@ export const LIMITE_DO_NOME = 60;
 
 export type Validado<T> = ({ ok: true } & T) | { ok: false; erro: string };
 
+const COM_ACENTO = "áàâãäéèêëíìîïóòôõöúùûüçñ";
+const SEM_ACENTO = "aaaaaeeeeiiiiooooouuuucn";
+
 /**
- * Nome de categoria novo ou renomeado: sem espaço sobrando, até 60 caracteres e sem repetir outra categoria da
- * mesma lista (sem diferenciar maiúsculas). `id` é a categoria sendo renomeada, que pode mudar só a grafia.
+ * Identificador da categoria no endereço ("Manutenção e exames" → "manutencao-e-exames").
+ * ATENÇÃO: espelho de `slug_da_categoria` no banco (mesma tabela de acentos); as duas precisam bater.
+ */
+export function slugDaCategoria(nome: string): string {
+  const semAcento = [...nome.trim().toLowerCase()].map((ch) => {
+    const i = COM_ACENTO.indexOf(ch);
+    return i >= 0 ? SEM_ACENTO[i] : ch;
+  });
+  return semAcento.join("").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+/** Reservado para as contas cujo item não tem categoria (D-5). */
+export const SLUG_SEM_CATEGORIA = "sem-categoria";
+
+/**
+ * Nome de categoria novo ou renomeado: sem espaço sobrando, até 60 caracteres, com letra ou número, e sem repetir o
+ * identificador de outra categoria de qualquer das duas listas (o filtro das páginas é pelo identificador e uma página
+ * mostra categorias das duas listas, D-3). `id` é a categoria sendo renomeada, que pode mudar só a grafia.
  */
 export function validarNomeDeCategoria(
   nome: string,
@@ -36,7 +55,10 @@ export function validarNomeDeCategoria(
   const limpo = nome.replace(/\s+/g, " ").trim();
   if (limpo === "") return { ok: false, erro: "Escreva o nome da categoria." };
   if (limpo.length > LIMITE_DO_NOME) return { ok: false, erro: `O nome pode ter até ${LIMITE_DO_NOME} caracteres.` };
-  const repetida = existentes.find((c) => c.id !== id && c.nome.toLocaleLowerCase("pt-BR") === limpo.toLocaleLowerCase("pt-BR"));
+  const slug = slugDaCategoria(limpo);
+  if (slug === "") return { ok: false, erro: "O nome precisa ter letra ou número." };
+  if (slug === SLUG_SEM_CATEGORIA) return { ok: false, erro: '"Sem categoria" é reservado.' };
+  const repetida = existentes.find((c) => c.id !== id && slugDaCategoria(c.nome) === slug);
   if (repetida) return { ok: false, erro: `Já existe a categoria "${repetida.nome}".` };
   return { ok: true, nome: limpo };
 }

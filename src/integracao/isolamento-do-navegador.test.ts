@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const chavePublica = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-const TABELAS = ["perfis_usuarios", "auditoria", "sync_jobs", "prodoctor_payload_bruto", "unidades", "profissionais", "convenios", "de_para", "recebiveis", "pendencias", "repasses", "titulos_repasse", "plano_financeiro", "contas_pagar_receber"] as const;
+const TABELAS = ["perfis_usuarios", "auditoria", "sync_jobs", "prodoctor_payload_bruto", "unidades", "profissionais", "convenios", "de_para", "recebiveis", "pendencias", "repasses", "titulos_repasse", "plano_financeiro", "contas_pagar_receber", "categorias", "categoria_do_item"] as const;
 const filtrosDeTeste = {
   p_natureza: "pagar", p_aba: "todas", p_de: "2026-10-01", p_ate: "2026-10-31", p_tipo_data: "vencimento",
   p_situacoes: [], p_categorias: [], p_fornecedor: null,
@@ -24,6 +24,8 @@ const CORPO_VALIDO: Record<(typeof TABELAS)[number], Record<string, unknown>> = 
   titulos_repasse: { empresa: "X", mes: "2026-10", numero_repasse: "1", nome_profissional_origem: "x", data_repasse: "2026-10-01", linhas: 1, total_exato: "1", total_centavos: 100 },
   plano_financeiro: { empresa: "X", tipo: "conta_contabil", codigo: "1", nome: "x" },
   contas_pagar_receber: { empresa: "X", codigo_local: "1", numero: "1", mes: "2026-10", data_inclusao: "2026-10-01" },
+  categorias: { natureza: "pagar", nome: "Invasão" },
+  categoria_do_item: { natureza: "pagar", item: "x", categoria_id: 1 },
 };
 
 /** Funções com argumentos reais, pelo mesmo motivo. */
@@ -58,6 +60,9 @@ const FUNCOES: Record<string, Record<string, unknown>> = {
   definir_categoria_do_item: { p_natureza: "pagar", p_item: "x", p_categoria_id: 1, p_usuario: "00000000-0000-0000-0000-000000000000" },
   salvar_categoria: { p_natureza: "pagar", p_id: null, p_nome: "x", p_usuario: "00000000-0000-0000-0000-000000000000" },
   slug_da_categoria: { p_nome: "x" },
+  item_sem_unidade: { p_nome: "x" },
+  unidade_do_plano: { p_codigo: "1" },
+  natureza_do_plano: { p_codigo: "1.01" },
   contas_filtradas: filtrosDeTeste,
   listar_contas: filtrosDeTeste,
   totais_contas_filtradas: filtrosDeTeste,

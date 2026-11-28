@@ -55,9 +55,10 @@ export async function salvarCategoria(formulario: FormData): Promise<ResultadoDe
   if (id !== undefined && !Number.isInteger(id)) return falha("Categoria inválida.");
 
   const db = criarClienteAdmin();
-  const categorias = (await lerCategorias(db)).filter((c) => c.natureza === natureza);
-  if (id !== undefined && !categorias.some((c) => c.id === id)) return falha("Essa categoria não existe nesta lista.");
-  const nome = validarNomeDeCategoria(String(formulario.get("nome") ?? ""), categorias, id);
+  // As duas listas: o identificador da categoria é único entre elas (o filtro das páginas de contas é por ele).
+  const todas = await lerCategorias(db);
+  if (id !== undefined && !todas.some((c) => c.id === id && c.natureza === natureza)) return falha("Essa categoria não existe nesta lista.");
+  const nome = validarNomeDeCategoria(String(formulario.get("nome") ?? ""), todas, id);
   if (!nome.ok) return falha(nome.erro);
 
   const { error } = await db.rpc("salvar_categoria", {

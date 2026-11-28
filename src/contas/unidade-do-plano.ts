@@ -20,9 +20,12 @@ export function unidadeDoPlano(codigo: string | null): UnidadeDoPlano {
   return "caixa";
 }
 
-const SUFIXO_DA_UNIDADE = /\s*\(\s*(?:stella|sabin|tni)\s*\)\s*$/i;
+const SUFIXOS_DA_UNIDADE = /(?:\s*\(\s*(?:stella|sabin|tni)\s*\)\s*)+$/i;
 
-/** "Taxa de Cartão sobre a Venda (SABIN)" → "Taxa de Cartão sobre a Venda": só o último sufixo, só no fim. */
+/**
+ * "Taxa de Cartão sobre a Venda (SABIN)" → "Taxa de Cartão sobre a Venda": todos os sufixos de unidade do fim, para
+ * que aplicar de novo não mude nada (a ligação de categoria exige `item = itemSemUnidade(item)`).
+ */
 export function itemSemUnidade(nome: string): string {
-  return nome.replace(SUFIXO_DA_UNIDADE, "").trim();
+  return nome.replace(SUFIXOS_DA_UNIDADE, "").trim();
 }

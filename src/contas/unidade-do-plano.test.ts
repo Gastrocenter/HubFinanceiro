@@ -49,8 +49,9 @@ describe("itemSemUnidade", () => {
     expect(itemSemUnidade("Repasse TNI (STELLA)")).toBe("Repasse TNI");
   });
 
-  it("tira só o último sufixo", () => {
-    expect(itemSemUnidade("Repasse (TNI) (STELLA)")).toBe("Repasse (TNI)");
+  it("tira todos os sufixos de unidade do fim: o resultado não muda se aplicar de novo", () => {
+    expect(itemSemUnidade("Repasse (TNI) (STELLA)")).toBe("Repasse");
+    expect(itemSemUnidade(itemSemUnidade("Foo (TNI) (SABIN)"))).toBe(itemSemUnidade("Foo (TNI) (SABIN)"));
   });
 
   it("não mexe em parênteses que não são unidade", () => {

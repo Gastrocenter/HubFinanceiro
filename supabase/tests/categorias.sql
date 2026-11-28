@@ -40,7 +40,7 @@ begin
       ('  ISSQN   (Tni)', 'ISSQN'),
       ('Repasse (TNI) sobre Venda', 'Repasse (TNI) sobre Venda'),
       ('Repasse TNI (STELLA)', 'Repasse TNI'),
-      ('Repasse (TNI) (STELLA)', 'Repasse (TNI)'),
+      ('Repasse (TNI) (STELLA)', 'Repasse'),
       ('Manometria (esofágica)', 'Manometria (esofágica)'),
       ('  Aluguel de Sala ', 'Aluguel de Sala'),
       ('Assistência Médica Mensalidade (Upgrade E Dependentes) (SABIN)', 'Assistência Médica Mensalidade (Upgrade E Dependentes)')
